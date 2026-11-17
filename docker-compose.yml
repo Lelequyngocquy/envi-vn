@@ -1,0 +1,52 @@
+services:
+  # 1. Redis Service (Cache & Pub/Sub)
+  redis:
+    image: redis:7-alpine
+    container_name: envivn_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/data:/data
+    command: redis-server --appendonly yes
+
+  # 2. Local AI Service (Ollama Server)
+  ollama:
+    image: ollama/ollama:latest
+    container_name: envivn_ai
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_models:/root/.ollama
+    # If NVIDIA GPU is available, uncomment deploy block below:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  # 3. EnviVN Backend Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: envivn_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - AI_MODEL_NAME=qwen2.5:3b
+      - NASA_FIRMS_API_KEY=aaa04b831a37f75677607b924c5df1de
+    depends_on:
+      - redis
+      - ollama
+
+volumes:
+  ollama_models:

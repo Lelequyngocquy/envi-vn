@@ -48,3 +48,14 @@ app.*.map.json
 .env
 .env*.local
 !.env_example
+!.env.example
+
+# Monorepo & Services
+redis/data/*
+!redis/data/.gitkeep
+
+# Documents & Text files
+*.md
+!README.md
+*.txt
+!CMakeLists.txt
