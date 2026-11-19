@@ -98,7 +98,7 @@ void main() {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('Trợ lý AI Gemma 2B'), findsOneWidget);
+        expect(find.text('Trợ lý AI EnviVN'), findsOneWidget);
         expect(find.text('Quy tắc cố định WHO/EPA (0ms)'), findsOneWidget);
 
         expect(find.byType(Switch), findsOneWidget);
@@ -120,7 +120,7 @@ void main() {
 
         expect(chatCubit.state.isAiEnabled, isTrue);
         expect(
-          find.text('Suy luận on-device • Phản hồi thông minh'),
+          find.text('Local AI Node • Phản hồi thông minh'),
           findsOneWidget,
         );
         expect(find.text('Gói trí tuệ nhân tạo Gemma 2B'), findsOneWidget);
@@ -170,7 +170,7 @@ void main() {
         await tester.pumpWidget(buildTestWidget());
         await tester.pumpAndSettle();
 
-        expect(find.text('Cố vấn AI Gemma'), findsOneWidget);
+        expect(find.text('Cố vấn AI EnviVN'), findsOneWidget);
         expect(find.byType(TextField), findsOneWidget);
         expect(
           find.text('Hỏi về không khí, chạy bộ, ngập úng...'),

@@ -395,7 +395,7 @@ class _MessageBubble extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: const [
                         AppText.bold(
-                          'Cố vấn AI Gemma',
+                          'Cố vấn AI EnviVN',
                           size: 11,
                           color: UIColors.primary,
                         ),

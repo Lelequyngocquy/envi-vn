@@ -1,10 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_gemma/core/chat.dart';
-import 'package:flutter_gemma/flutter_gemma.dart';
-
+import 'package:http/http.dart' as http;
+import '../configs/env_config.dart';
 import 'context_prompt_builder.dart';
 import 'model_download_service.dart';
 
@@ -18,78 +16,76 @@ abstract class IGemmaBridge {
   Future<void> close();
 }
 
-class FlutterGemmaBridge implements IGemmaBridge {
-  InferenceModel? _model;
-  InferenceChat? _chat;
+class BackendSseBridge implements IGemmaBridge {
+  final http.Client _client;
+  String? _systemPrompt;
+  double? latitude;
+  double? longitude;
+
+  BackendSseBridge({http.Client? client}) : _client = client ?? http.Client();
 
   @override
-  Future<bool> isModelInstalled() async {
-    try {
-      return await FlutterGemmaPlugin.instance.modelManager.isModelInstalled;
-    } catch (_) {
-      return false;
-    }
-  }
+  Future<bool> isModelInstalled() async => true;
 
   @override
-  Future<void> setModelPath(String path) async {
-    await FlutterGemmaPlugin.instance.modelManager.setModelPath(path);
-  }
+  Future<void> setModelPath(String path) async {}
 
   @override
-  Future<void> createModel({
-    required bool isInstructionTuned,
-    int maxTokens = 2048,
-  }) async {
-    await _model?.close();
-    _model = await FlutterGemmaPlugin.instance.createModel(
-      isInstructionTuned: isInstructionTuned,
-      maxTokens: maxTokens,
-    );
-  }
+  Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
 
   @override
   Future<void> createChatSession({String? systemPrompt}) async {
-    if (_model == null) {
-      throw StateError('Model must be created before starting a chat session');
-    }
-    _chat = await _model!.createChat(temperature: 0.7);
-    if (systemPrompt != null && systemPrompt.isNotEmpty) {
-      await _chat!.addQueryChunk(Message(text: systemPrompt, isUser: false));
-    }
+    _systemPrompt = systemPrompt;
   }
 
   @override
   Stream<String> generateResponseAsync(String message) async* {
-    if (_chat == null) {
-      throw StateError('Chat session is not active');
+    final uri = Uri.parse('${EnvConfig.backendBaseUrl}/api/v1/advisor/chat');
+    final request = http.Request('POST', uri);
+    request.headers['Content-Type'] = 'application/json';
+    request.body = jsonEncode({
+      'message': message,
+      if (_systemPrompt != null) 'system': _systemPrompt,
+      if (latitude != null) 'lat': latitude,
+      if (longitude != null) 'lon': longitude,
+    });
+    final response = await _client.send(request);
+    if (response.statusCode != 200) {
+      throw HttpException('Backend returned status ${response.statusCode}');
     }
-    await _chat!.addQueryChunk(Message(text: message, isUser: true));
-    yield* _chat!.generateChatResponseAsync();
+    await for (final line in response.stream.toStringStream().transform(const LineSplitter())) {
+      if (line.startsWith('data: ')) {
+        final data = line.substring(6).trim();
+        if (data == '[DONE]') break;
+        try {
+          final decoded = jsonDecode(data);
+          if (decoded is Map && decoded['content'] != null) {
+            final content = decoded['content'] as String;
+            if (content.isNotEmpty) yield content;
+          }
+        } catch (_) {}
+      }
+    }
   }
 
   @override
   Future<String> generateResponse(String message) async {
-    if (_chat == null) {
-      throw StateError('Chat session is not active');
+    final buffer = StringBuffer();
+    await for (final chunk in generateResponseAsync(message)) {
+      buffer.write(chunk);
     }
-    await _chat!.addQueryChunk(Message(text: message, isUser: true));
-    return await _chat!.generateChatResponse();
+    return buffer.toString();
   }
 
   @override
   Future<void> close() async {
-    await _chat?.session.close();
-    _chat = null;
-    await _model?.close();
-    _model = null;
+    _systemPrompt = null;
   }
 }
 
 class SimulatedGemmaBridge implements IGemmaBridge {
   String? _currentSystemPrompt;
   bool _isInstalled = false;
-  bool _isModelCreated = false;
   bool _isChatActive = false;
 
   @override
@@ -101,18 +97,10 @@ class SimulatedGemmaBridge implements IGemmaBridge {
   }
 
   @override
-  Future<void> createModel({
-    required bool isInstructionTuned,
-    int maxTokens = 2048,
-  }) async {
-    _isModelCreated = true;
-  }
+  Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
 
   @override
   Future<void> createChatSession({String? systemPrompt}) async {
-    if (!_isModelCreated) {
-      throw StateError('Model must be created before starting a chat session');
-    }
     _currentSystemPrompt = systemPrompt;
     _isChatActive = true;
   }
@@ -122,11 +110,8 @@ class SimulatedGemmaBridge implements IGemmaBridge {
     if (!_isChatActive) {
       throw StateError('Chat session is not active');
     }
-    final full = ContextPromptBuilder.generateSimulatedResponse(
-      query: message,
-      systemPrompt: _currentSystemPrompt ?? '',
-    );
-    final words = full.split(' ');
+    final fullReply = ContextPromptBuilder.generateSimulatedResponse(query: message, systemPrompt: _currentSystemPrompt ?? '');
+    final words = fullReply.split(' ');
     for (int i = 0; i < words.length; i++) {
       await Future.delayed(const Duration(milliseconds: 15));
       yield i == 0 ? words[i] : ' ${words[i]}';
@@ -138,16 +123,12 @@ class SimulatedGemmaBridge implements IGemmaBridge {
     if (!_isChatActive) {
       throw StateError('Chat session is not active');
     }
-    return ContextPromptBuilder.generateSimulatedResponse(
-      query: message,
-      systemPrompt: _currentSystemPrompt ?? '',
-    );
+    return ContextPromptBuilder.generateSimulatedResponse(query: message, systemPrompt: _currentSystemPrompt ?? '');
   }
 
   @override
   Future<void> close() async {
     _isChatActive = false;
-    _isModelCreated = false;
   }
 }
 
@@ -155,12 +136,7 @@ class EdgeAiInferenceService {
   final ModelDownloadService downloadService;
   final IGemmaBridge _bridge;
   final Future<int> Function()? customRamProvider;
-
-  static const MethodChannel _memoryChannel = MethodChannel(
-    'vn.envi.app/disk_space',
-  );
   static const int requiredFreeRamBytes = 1400 * 1024 * 1024;
-
   bool _isModelLoaded = false;
   bool _isChatActive = false;
   String? _currentSystemPrompt;
@@ -169,13 +145,7 @@ class EdgeAiInferenceService {
     required this.downloadService,
     IGemmaBridge? bridge,
     this.customRamProvider,
-  }) : _bridge =
-           bridge ??
-           ((defaultTargetPlatform == TargetPlatform.android ||
-                       defaultTargetPlatform == TargetPlatform.iOS) &&
-                   !kIsWeb
-               ? FlutterGemmaBridge()
-               : SimulatedGemmaBridge());
+  }) : _bridge = bridge ?? BackendSseBridge();
 
   bool get isModelLoaded => _isModelLoaded;
   bool get isChatActive => _isChatActive;
@@ -185,20 +155,7 @@ class EdgeAiInferenceService {
     if (customRamProvider != null) {
       return await customRamProvider!();
     }
-    try {
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        final bytes = await _memoryChannel
-            .invokeMethod<int>('getAvailableRamBytes')
-            .timeout(
-              const Duration(milliseconds: 500),
-              onTimeout: () => 3 * 1024 * 1024 * 1024,
-            );
-        if (bytes != null && bytes > 0) return bytes;
-      }
-      return 3 * 1024 * 1024 * 1024;
-    } catch (_) {
-      return 3 * 1024 * 1024 * 1024;
-    }
+    return 3 * 1024 * 1024 * 1024;
   }
 
   Future<bool> hasEnoughRam({int requiredBytes = requiredFreeRamBytes}) async {
@@ -213,7 +170,10 @@ class EdgeAiInferenceService {
         _isModelLoaded = false;
         return false;
       }
-
+      if (_bridge is BackendSseBridge) {
+        _isModelLoaded = true;
+        return true;
+      }
       String? path = customPath;
       if (path == null) {
         final modelFile = await downloadService.getModelFile();
@@ -221,11 +181,9 @@ class EdgeAiInferenceService {
           path = modelFile.path;
         }
       }
-
       if (path == null || !File(path).existsSync()) {
         return false;
       }
-
       await _bridge.setModelPath(path);
       await _bridge.createModel(isInstructionTuned: true, maxTokens: 2048);
       _isModelLoaded = true;
@@ -236,18 +194,20 @@ class EdgeAiInferenceService {
     }
   }
 
-  Future<void> startChatSession({required String systemPrompt}) async {
+  Future<void> startChatSession({required String systemPrompt, double? lat, double? lon}) async {
     final hasRam = await hasEnoughRam();
     if (!hasRam) {
-      throw StateError(
-        'Thiết bị không đủ RAM trống để khởi chạy mô hình AI (cần tối thiểu 1.4 GB).',
-      );
+      throw StateError('Thiết bị không đủ RAM trống để khởi chạy mô hình AI (cần tối thiểu 1.4 GB).');
     }
     if (!_isModelLoaded) {
       final initialized = await initModel();
       if (!initialized) {
         throw StateError('Model is not installed or downloaded yet.');
       }
+    }
+    if (_bridge is BackendSseBridge) {
+      _bridge.latitude = lat;
+      _bridge.longitude = lon;
     }
     _currentSystemPrompt = systemPrompt;
     await _bridge.createChatSession(systemPrompt: systemPrompt);

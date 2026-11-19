@@ -169,6 +169,15 @@ class EnvConfig {
     defaultValue: 'aaa04b831a37f75677607b924c5df1de',
   );
 
+  /// URL Backend Service
+  static String get backendBaseUrl {
+    final configured = get('BACKEND_BASE_URL');
+    if (configured.isNotEmpty) return configured;
+    if (kIsWeb) return 'http://localhost:8080';
+    if (defaultTargetPlatform == TargetPlatform.android) return 'http://10.0.2.2:8080';
+    return 'http://localhost:8080';
+  }
+
   static String get gemmaModelDownloadUrl => get(
     'GEMMA_MODEL_DOWNLOAD_URL',
     defaultValue:

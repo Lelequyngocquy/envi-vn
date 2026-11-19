@@ -302,7 +302,7 @@ class _ModeToggleBar extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 AppText.bold(
-                  'Trợ lý AI Gemma 2B',
+                  'Trợ lý AI EnviVN',
                   size: 13,
                   color: isAiEnabled
                       ? UIColors.textPrimary
@@ -311,7 +311,7 @@ class _ModeToggleBar extends StatelessWidget {
                 const Gap(1),
                 AppText.regular(
                   isAiEnabled
-                      ? 'Suy luận on-device • Phản hồi thông minh'
+                      ? 'Local AI Node • Phản hồi thông minh'
                       : 'Quy tắc cố định WHO/EPA (0ms)',
                   size: 10.5,
                   color: UIColors.textSecondary,

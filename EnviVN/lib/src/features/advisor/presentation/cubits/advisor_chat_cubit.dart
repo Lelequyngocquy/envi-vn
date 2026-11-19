@@ -40,40 +40,23 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
     required AirQualityEntity airQuality,
   }) async {
     await downloadService.init();
-
     final isReady = await downloadService.isModelReady();
-    if (!isReady) return;
-
+    if (!isReady) {
+      final canInit = await inferenceService.initModel();
+      if (!canInit) return;
+      emit(state.copyWith(downloadState: const ModelDownloadState(status: ModelDownloadStatus.ready, progress: 1.0)));
+    }
     final hasEnoughRam = await inferenceService.hasEnoughRam();
     if (!hasEnoughRam) {
-      emit(
-        state.copyWith(
-          errorMessage:
-              'Thiết bị còn ít hơn 1.4 GB RAM trống. Vui lòng đóng bớt ứng dụng nền hoặc sử dụng chế độ Cố vấn Tiêu chuẩn.',
-          isAiEnabled: false,
-        ),
-      );
+      emit(state.copyWith(errorMessage: 'Thiết bị còn ít hơn 1.4 GB RAM trống. Vui lòng đóng bớt ứng dụng nền hoặc sử dụng chế độ Cố vấn Tiêu chuẩn.', isAiEnabled: false));
       return;
     }
-
-    final systemPrompt = ContextPromptBuilder.buildSystemPrompt(
-      location: location,
-      weather: weather,
-      airQuality: airQuality,
-    );
+    final systemPrompt = ContextPromptBuilder.buildSystemPrompt(location: location, weather: weather, airQuality: airQuality);
     _lastSystemPrompt = systemPrompt;
-
     try {
-      await inferenceService.startChatSession(systemPrompt: systemPrompt);
-
+      await inferenceService.startChatSession(systemPrompt: systemPrompt, lat: location.latitude, lon: location.longitude);
       if (state.messages.isEmpty) {
-        final greeting = ChatMessageItem(
-          id: 'welcome_${DateTime.now().millisecondsSinceEpoch}',
-          text:
-              'Xin chào! Tôi là Trợ lý AI Gemma on-device của EnviVN. Tôi đã nạp toàn bộ dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?',
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
+        final greeting = ChatMessageItem(id: 'welcome_${DateTime.now().millisecondsSinceEpoch}', text: 'Xin chào! Tôi là Trợ lý AI EnviVN. Tôi đã nạp toàn bộ dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?', isUser: false, timestamp: DateTime.now());
         emit(state.copyWith(messages: [greeting]));
       }
     } catch (e) {
