@@ -20,9 +20,7 @@ class FakeLocationService extends LocationService {
   Future<bool> checkPermissionGranted() async => isGranted;
 
   @override
-  Future<LocationResult> getCurrentLocation({
-    bool allowIpFallback = false,
-  }) async {
+  Future<LocationResult> getCurrentLocation() async {
     return const LocationResult(
       latitude: 10.7769,
       longitude: 106.7009,

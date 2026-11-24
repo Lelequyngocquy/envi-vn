@@ -1,5 +1,4 @@
 import '../../domain/entities/station_entity.dart';
-import '../../domain/entities/vietnam_monitoring_station.dart';
 
 class StationModel extends StationEntity {
   const StationModel({
@@ -13,45 +12,46 @@ class StationModel extends StationEntity {
     required super.pm10,
     required super.updatedAt,
     super.temperature,
+    super.apparentTemp,
     super.weatherCode,
     super.humidity,
     super.windSpeed,
+    super.precipitation,
+    super.uvIndex,
   });
 
-  factory StationModel.fromApiResponse({
-    required VietnamMonitoringStation station,
-    required Map<String, dynamic> currentData,
-  }) {
-    return StationModel(
-      id: station.id,
-      name: station.stationName,
-      province: station.province,
-      latitude: station.latitude,
-      longitude: station.longitude,
-      aqi:
-          int.tryParse(currentData['us_aqi']?.toString() ?? '') ??
-          station.defaultAqi,
-      pm25:
-          double.tryParse(currentData['pm2_5']?.toString() ?? '') ??
-          station.defaultPm25,
-      pm10:
-          double.tryParse(currentData['pm10']?.toString() ?? '') ??
-          station.defaultPm10,
-      updatedAt: DateTime.now(),
-    );
+  static double? _toNullableDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 
-  factory StationModel.fromStation(VietnamMonitoringStation station) {
+  static int? _toNullableInt(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.round();
+    return double.tryParse(value.toString())?.round();
+  }
+
+  /// Parses Backend /api/v1/map/stations station item JSON.
+  factory StationModel.fromBackendJson(Map<String, dynamic> json) {
+    final parsedDate = DateTime.tryParse(json['updated_at']?.toString() ?? '');
     return StationModel(
-      id: station.id,
-      name: station.stationName,
-      province: station.province,
-      latitude: station.latitude,
-      longitude: station.longitude,
-      aqi: station.defaultAqi,
-      pm25: station.defaultPm25,
-      pm10: station.defaultPm10,
-      updatedAt: DateTime.now(),
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      province: json['province']?.toString() ?? '',
+      latitude: _toNullableDouble(json['latitude']) ?? 0.0,
+      longitude: _toNullableDouble(json['longitude']) ?? 0.0,
+      aqi: _toNullableInt(json['aqi']) ?? 0,
+      pm25: _toNullableDouble(json['pm25']) ?? 0.0,
+      pm10: _toNullableDouble(json['pm10']) ?? 0.0,
+      temperature: _toNullableDouble(json['temperature']),
+      apparentTemp: _toNullableDouble(json['apparent_temperature']),
+      weatherCode: _toNullableInt(json['weather_code']),
+      humidity: _toNullableInt(json['relative_humidity']),
+      windSpeed: _toNullableDouble(json['wind_speed']),
+      precipitation: _toNullableDouble(json['precipitation']),
+      uvIndex: _toNullableDouble(json['uv_index']),
+      updatedAt: parsedDate ?? DateTime.now(),
     );
   }
 }

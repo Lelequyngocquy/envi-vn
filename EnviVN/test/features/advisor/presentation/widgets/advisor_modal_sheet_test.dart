@@ -15,12 +15,18 @@ class _FakeSheetBridge implements IAiChatBridge {
   Future<void> startSession({double? lat, double? lon}) async {}
 
   @override
-  Stream<String> generateResponseStream(String message) async* {
+  Stream<String> generateResponseStream(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async* {
     yield 'Phản hồi từ Local AI Node.';
   }
 
   @override
-  Future<String> generateResponse(String message) async => 'Phản hồi từ Local AI Node.';
+  Future<String> generateResponse(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async => 'Phản hồi từ Local AI Node.';
 
   @override
   Future<void> close() async {}

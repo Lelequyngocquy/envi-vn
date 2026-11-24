@@ -7,12 +7,14 @@ import '../configs/env_config.dart';
 
 abstract class IAiChatBridge {
   Future<void> startSession({double? lat, double? lon});
-  Stream<String> generateResponseStream(String message);
-  Future<String> generateResponse(String message);
+  Stream<String> generateResponseStream(String message, {List<Map<String, String>> history = const []});
+  Future<String> generateResponse(String message, {List<Map<String, String>> history = const []});
   Future<void> close();
 }
 
 class BackendSseBridge implements IAiChatBridge {
+  static const int maxOutboundMessages = 10;
+
   final http.Client _client;
   final bool _ownsClient;
   double? _latitude;
@@ -28,14 +30,45 @@ class BackendSseBridge implements IAiChatBridge {
     _longitude = lon;
   }
 
+  List<Map<String, String>> _buildOutboundMessages(String message, List<Map<String, String>> history) {
+    // Strip any client system roles; Backend injects the authoritative system prompt.
+    final sanitized = <Map<String, String>>[];
+    for (final item in history) {
+      final role = item['role']?.trim() ?? '';
+      final content = item['content']?.trim() ?? '';
+      if ((role == 'user' || role == 'assistant') && content.isNotEmpty) {
+        sanitized.add({'role': role, 'content': content});
+      }
+    }
+    final trimmed = message.trim();
+    if (trimmed.isNotEmpty) {
+      final isDuplicateTail = sanitized.isNotEmpty && sanitized.last['role'] == 'user' && sanitized.last['content'] == trimmed;
+      if (!isDuplicateTail) {
+        sanitized.add({'role': 'user', 'content': trimmed});
+      }
+    }
+    if (sanitized.length > maxOutboundMessages) {
+      return sanitized.sublist(sanitized.length - maxOutboundMessages);
+    }
+    return sanitized;
+  }
+
   @override
-  Stream<String> generateResponseStream(String message) async* {
+  Stream<String> generateResponseStream(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async* {
     final uri = Uri.parse('${EnvConfig.backendBaseUrl}/api/v1/advisor/chat');
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
-    // Never send client-controlled system prompts to backend.
+    final apiKey = EnvConfig.clientApiKey;
+    if (apiKey.isNotEmpty) {
+      request.headers['x-api-key'] = apiKey;
+    }
+    final outboundMessages = _buildOutboundMessages(message, history);
     request.body = jsonEncode({
       'message': message,
+      'messages': outboundMessages,
       if (_latitude != null) 'lat': _latitude,
       if (_longitude != null) 'lon': _longitude,
     });
@@ -60,9 +93,12 @@ class BackendSseBridge implements IAiChatBridge {
   }
 
   @override
-  Future<String> generateResponse(String message) async {
+  Future<String> generateResponse(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async {
     final buffer = StringBuffer();
-    await for (final chunk in generateResponseStream(message)) {
+    await for (final chunk in generateResponseStream(message, history: history)) {
       buffer.write(chunk);
     }
     return buffer.toString();
@@ -87,18 +123,24 @@ class EdgeAiInferenceService {
     _isChatActive = true;
   }
 
-  Stream<String> sendMessageStream(String userMessage) async* {
+  Stream<String> sendMessageStream(
+    String userMessage, {
+    List<Map<String, String>> history = const [],
+  }) async* {
     if (!_isChatActive) {
       throw StateError('Please call startChatSession before sending messages.');
     }
-    yield* _bridge.generateResponseStream(userMessage);
+    yield* _bridge.generateResponseStream(userMessage, history: history);
   }
 
-  Future<String> sendMessage(String userMessage) async {
+  Future<String> sendMessage(
+    String userMessage, {
+    List<Map<String, String>> history = const [],
+  }) async {
     if (!_isChatActive) {
       throw StateError('Please call startChatSession before sending messages.');
     }
-    return _bridge.generateResponse(userMessage);
+    return _bridge.generateResponse(userMessage, history: history);
   }
 
   Future<void> resetChatSession({double? lat, double? lon}) async {

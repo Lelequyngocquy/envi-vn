@@ -6,6 +6,8 @@ import '../../../../core/infrastructure/services/edge_ai_inference_service.dart'
 import 'advisor_chat_state.dart';
 
 class AdvisorChatCubit extends Cubit<AdvisorChatState> {
+  static const int _maxHistoryTurns = 8;
+
   final EdgeAiInferenceService inferenceService;
   StreamSubscription<String>? _streamSub;
   Completer<void>? _activeCompleter;
@@ -43,9 +45,24 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
     _activeCompleter = null;
   }
 
+  List<Map<String, String>> _buildRecentHistory() {
+    final history = <Map<String, String>>[];
+    for (final msg in state.messages) {
+      if (msg.id.startsWith('welcome_') || msg.isStreaming) continue;
+      final content = msg.text.trim();
+      if (content.isEmpty) continue;
+      history.add({'role': msg.isUser ? 'user' : 'assistant', 'content': content});
+    }
+    if (history.length > _maxHistoryTurns) {
+      return history.sublist(history.length - _maxHistoryTurns);
+    }
+    return history;
+  }
+
   Future<void> sendMessage(String text) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty || state.isStreaming || isClosed) return;
+    final recentHistory = _buildRecentHistory();
     final userMsg = ChatMessageItem(id: 'user_${DateTime.now().millisecondsSinceEpoch}', text: trimmed, isUser: true, timestamp: DateTime.now());
     final botMsgId = 'bot_${DateTime.now().millisecondsSinceEpoch}';
     final botMsg = ChatMessageItem(id: botMsgId, text: '', isUser: false, timestamp: DateTime.now(), isStreaming: true);
@@ -61,7 +78,7 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
         _completeActiveStream();
         return;
       }
-      _streamSub = inferenceService.sendMessageStream(trimmed).listen(
+      _streamSub = inferenceService.sendMessageStream(trimmed, history: recentHistory).listen(
         (chunk) {
           if (isClosed) return;
           buffer.write(chunk);

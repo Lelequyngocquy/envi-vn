@@ -1,6 +1,6 @@
-import '../../../air_quality/infrastructure/paths/air_quality_paths.dart';
-
 class MapPaths {
-  static const airQualityPath = AirQualityPaths.airQuality;
-  static String get airQualityBaseUrl => AirQualityPaths.airQualityBaseUrl;
+  MapPaths._();
+
+  static const String stations = '/api/v1/map/stations';
+  static const String catalogLocations = '/api/v1/catalog/locations';
 }

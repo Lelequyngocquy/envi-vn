@@ -114,7 +114,9 @@ class WeatherCodeHelper {
       case 51:
       case 53:
       case 55:
-        // Drizzle (Mưa phùn)
+      case 56:
+      case 57:
+        // Drizzle & freezing drizzle
         return const WeatherCodeInfo(
           'Mưa phùn nhẹ',
           Icons.grain_rounded,
@@ -122,9 +124,9 @@ class WeatherCodeHelper {
           shortLabel: 'Mưa phùn',
           isRain: true,
         );
-
       case 61:
-        // Slight rain (Mưa nhỏ)
+      case 66:
+        // Slight rain & freezing rain
         return const WeatherCodeInfo(
           'Mưa nhỏ',
           Icons.water_drop_outlined,
@@ -132,9 +134,8 @@ class WeatherCodeHelper {
           shortLabel: 'Mưa nhỏ',
           isRain: true,
         );
-
       case 63:
-        // Moderate rain (Mưa vừa)
+        // Moderate rain
         return const WeatherCodeInfo(
           'Mưa vừa',
           Icons.water_drop_rounded,
@@ -142,9 +143,9 @@ class WeatherCodeHelper {
           shortLabel: 'Mưa vừa',
           isRain: true,
         );
-
       case 65:
-        // Heavy rain (Mưa to)
+      case 67:
+        // Heavy rain & heavy freezing rain
         return const WeatherCodeInfo(
           'Mưa rào lớn',
           Icons.thunderstorm_rounded,

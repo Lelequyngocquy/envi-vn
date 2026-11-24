@@ -13,7 +13,6 @@ import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_stat
 import 'package:envivn/src/features/map/domain/entities/flood_blackspot.dart';
 import 'package:envivn/src/features/map/domain/entities/map_layer_type.dart';
 import 'package:envivn/src/features/map/domain/entities/station_entity.dart';
-import 'package:envivn/src/features/map/infrastructure/models/thermal_hotspot_model.dart';
 import 'package:envivn/src/features/map/presentation/cubits/map_cubit.dart';
 import 'package:envivn/src/features/map/presentation/cubits/map_state.dart';
 import 'package:envivn/src/features/map/presentation/widgets/dropped_pin_marker_widget.dart';
@@ -432,9 +431,7 @@ class _MapPageState extends State<MapPage> {
                 }).toList();
 
                 if (state.activeLayer == MapLayerType.thermal) {
-                  final thermalSpots = state.thermalHotspots.isNotEmpty
-                      ? state.thermalHotspots
-                      : ThermalHotspotModel.sampleHotspots;
+                  final thermalSpots = state.thermalHotspots;
                   for (final spot in thermalSpots) {
                     final isSelected = state.selectedStation?.id == spot.id;
                     final isActive = spot.isActiveFire;

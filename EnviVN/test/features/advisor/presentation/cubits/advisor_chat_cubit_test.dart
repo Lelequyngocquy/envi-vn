@@ -6,19 +6,30 @@ import 'package:envivn/src/features/advisor/presentation/cubits/advisor_chat_cub
 
 class _StubChatBridge implements IAiChatBridge {
   bool shouldError = false;
+  List<Map<String, String>> capturedHistory = const [];
 
   @override
   Future<void> startSession({double? lat, double? lon}) async {}
 
   @override
-  Stream<String> generateResponseStream(String message) async* {
+  Stream<String> generateResponseStream(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async* {
+    capturedHistory = history;
     if (shouldError) throw Exception('offline');
     yield 'Thời tiết phù hợp ';
     yield 'để chạy bộ nhẹ.';
   }
 
   @override
-  Future<String> generateResponse(String message) async => 'Thời tiết phù hợp để chạy bộ nhẹ.';
+  Future<String> generateResponse(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async {
+    capturedHistory = history;
+    return 'Thời tiết phù hợp để chạy bộ nhẹ.';
+  }
 
   @override
   Future<void> close() async {}
@@ -64,17 +75,18 @@ void main() {
       expect(chatCubit.state.messages.first.text, contains('Hà Nội'));
     });
 
-    test('sendMessage appends user message and receives streamed bot response', () async {
+    test('sendMessage appends user message, streams bot reply, and passes multi-turn history on follow-up', () async {
       final location = AppLocationEntity.city(name: 'Đà Nẵng', province: 'Đà Nẵng', latitude: 16.0544, longitude: 108.2022);
       await chatCubit.initChat(location: location);
       await chatCubit.sendMessage('Có nên chạy bộ không?');
+      expect(bridge.capturedHistory, isEmpty);
       expect(chatCubit.state.messages.length, equals(3));
       expect(chatCubit.state.messages[1].isUser, isTrue);
-      expect(chatCubit.state.messages[1].text, equals('Có nên chạy bộ không?'));
-      final botMessage = chatCubit.state.messages[2];
-      expect(botMessage.isUser, isFalse);
-      expect(botMessage.isStreaming, isFalse);
-      expect(botMessage.text, contains('chạy bộ'));
+      expect(chatCubit.state.messages[2].text, contains('chạy bộ'));
+      await chatCubit.sendMessage('Vậy cần mang nước không?');
+      expect(bridge.capturedHistory.length, equals(2));
+      expect(bridge.capturedHistory[0], {'role': 'user', 'content': 'Có nên chạy bộ không?'});
+      expect(bridge.capturedHistory[1]['role'], 'assistant');
     });
 
     test('clearChat resets messages and re-initializes chat session', () async {

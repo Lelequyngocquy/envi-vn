@@ -1,9 +1,5 @@
-import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:http/http.dart' as http;
-
-import '../configs/env_config.dart';
 
 class LocationResult {
   final double latitude;
@@ -26,30 +22,26 @@ class LocationResult {
 class LocationService {
   static const double defaultLat = 21.0285;
   static const double defaultLon = 105.8542;
+  static const Duration _lastKnownMaxAge = Duration(minutes: 15);
 
   Future<bool> checkPermissionGranted() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return false;
       final permission = await Geolocator.checkPermission();
-      return permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always;
+      return permission == LocationPermission.whileInUse || permission == LocationPermission.always;
     } catch (_) {
       return false;
     }
   }
 
-  Future<LocationResult> getCurrentLocation({
-    bool allowIpFallback = false,
-  }) async {
+  Future<LocationResult> getCurrentLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
-      if (permission == LocationPermission.denied ||
-          permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
         return LocationResult(
           latitude: defaultLat,
           longitude: defaultLon,
@@ -61,7 +53,6 @@ class LocationService {
               : 'Quyền truy cập vị trí bị từ chối. Sử dụng vị trí mặc định (Hà Nội).',
         );
       }
-
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         return const LocationResult(
@@ -69,92 +60,32 @@ class LocationService {
           longitude: defaultLon,
           cityName: 'Hà Nội',
           isDefault: true,
-          isPermissionDenied: true,
-          errorMessage:
-              'Dịch vụ định vị GPS trên thiết bị đang tắt. Sử dụng vị trí mặc định (Hà Nội).',
+          isPermissionDenied: false,
+          errorMessage: 'Dịch vụ định vị GPS trên thiết bị đang tắt. Sử dụng vị trí mặc định (Hà Nội).',
         );
       }
-
-      if (permission == LocationPermission.whileInUse ||
-          permission == LocationPermission.always) {
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
         final lastKnown = await Geolocator.getLastKnownPosition();
-        if (lastKnown != null) {
-          return LocationResult(
-            latitude: lastKnown.latitude,
-            longitude: lastKnown.longitude,
-            isDefault: false,
-            isPermissionDenied: false,
-          );
+        if (lastKnown != null && DateTime.now().difference(lastKnown.timestamp).abs() <= _lastKnownMaxAge) {
+          return LocationResult(latitude: lastKnown.latitude, longitude: lastKnown.longitude, isDefault: false, isPermissionDenied: false);
         }
-
         final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.medium,
-            timeLimit: Duration(seconds: 5),
-          ),
+          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: Duration(seconds: 5)),
         );
-
-        return LocationResult(
-          latitude: position.latitude,
-          longitude: position.longitude,
-          isDefault: false,
-          isPermissionDenied: false,
-        );
+        return LocationResult(latitude: position.latitude, longitude: position.longitude, isDefault: false, isPermissionDenied: false);
       }
     } catch (e) {
-      debugPrint('⚠️ [LocationService] Lỗi định vị GPS hoặc timeout: $e');
-    }
-
-    if (allowIpFallback) {
-      final ipResult = await _getLocationByIp();
-      if (ipResult != null) {
-        debugPrint(
-          '📍 [LocationService] Định vị qua IP: ${ipResult.latitude}, ${ipResult.longitude} (${ipResult.cityName})',
-        );
-        return ipResult;
+      if (kDebugMode) {
+        debugPrint('[LocationService] GPS error or timeout: $e');
       }
     }
-
-    debugPrint(
-      '⚠️ [LocationService] Định vị GPS không thành công, sử dụng vị trí mặc định Hà Nội.',
-    );
     return const LocationResult(
       latitude: defaultLat,
       longitude: defaultLon,
       cityName: 'Hà Nội',
       isDefault: true,
-      isPermissionDenied: true,
-      errorMessage:
-          'Không thể nhận diện vị trí GPS. Sử dụng vị trí mặc định (Hà Nội).',
+      isPermissionDenied: false,
+      errorMessage: 'Không thể nhận diện vị trí GPS. Sử dụng vị trí mặc định (Hà Nội).',
     );
-  }
-
-  Future<LocationResult?> _getLocationByIp() async {
-    try {
-      final response = await http
-          .get(Uri.parse(EnvConfig.ipApiBaseUrl))
-          .timeout(const Duration(seconds: 4));
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        if (data is Map<String, dynamic> && data['status'] == 'success') {
-          final lat = (data['lat'] as num?)?.toDouble();
-          final lon = (data['lon'] as num?)?.toDouble();
-          final city =
-              data['city']?.toString() ?? data['regionName']?.toString();
-          if (lat != null && lon != null) {
-            return LocationResult(
-              latitude: lat,
-              longitude: lon,
-              cityName: city,
-              isDefault: false,
-            );
-          }
-        }
-      }
-    } catch (e) {
-      debugPrint('⚠️ [LocationService] Lỗi khi lấy vị trí qua IP: $e');
-    }
-    return null;
   }
 }

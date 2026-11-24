@@ -1,5 +1,5 @@
 class DetailsPaths {
   DetailsPaths._();
 
-  static const String forecast = '/v1/forecast';
+  static const String forecast = '/api/v1/weather';
 }

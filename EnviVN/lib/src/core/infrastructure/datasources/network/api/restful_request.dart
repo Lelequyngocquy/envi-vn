@@ -20,7 +20,7 @@ class RestfulRequest {
     String? defaultBaseUrl,
     this.timeout = const Duration(seconds: 15),
   }) : _client = client ?? http.Client(),
-       defaultBaseUrl = defaultBaseUrl ?? EnvConfig.openMeteoWeatherBaseUrl;
+       defaultBaseUrl = defaultBaseUrl ?? EnvConfig.backendBaseUrl;
 
   Future<BaseResponse> requestData(
     EndpointType endpoint, {
@@ -29,8 +29,10 @@ class RestfulRequest {
     final activeBaseUrl = endpoint.customBaseUrl ?? defaultBaseUrl;
     Uri uri;
     String? body;
+    final apiKey = EnvConfig.clientApiKey;
     final headers = <String, String>{
       ...DefaultHeader.instance.defaultHeader,
+      if (apiKey.isNotEmpty) 'x-api-key': apiKey,
       if (endpoint.header != null) ...endpoint.header!,
     };
     try {
@@ -79,14 +81,13 @@ class RestfulRequest {
       }
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return BaseResponse.fromSuccessJson(json);
-      } else {
-        return BaseResponse.fromErrorJson(json);
       }
+      return BaseResponse.fromErrorJson(json);
     } on SocketException catch (e) {
       if (kDebugMode) {
         BaseResult.logError(url: uri.toString(), error: 'Network error: $e');
       }
-      return const BaseResponse(isSuccess: false, message: 'Không thể kết nối đến máy chủ thời tiết. Vui lòng kiểm tra Internet!');
+      return const BaseResponse(isSuccess: false, message: 'Không thể kết nối đến máy chủ EnviVN. Vui lòng kiểm tra Internet!');
     } on TimeoutException catch (e) {
       if (kDebugMode) {
         BaseResult.logError(url: uri.toString(), error: 'Timeout: $e');

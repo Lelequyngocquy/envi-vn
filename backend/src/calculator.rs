@@ -266,7 +266,7 @@ pub fn evaluate_quick_prompts(
             is_safe: false,
             advice: "Có mưa, đường trơn trượt và tầm nhìn giảm, hãy đi chậm và giữ khoảng cách an toàn.".into(),
         }
-    } else if aqi > 100 {
+    } else if aqi > 100 || pm25 > 35.0 {
         QuickPromptEvaluation {
             decision: "Đeo khẩu trang N95".into(),
             is_safe: false,

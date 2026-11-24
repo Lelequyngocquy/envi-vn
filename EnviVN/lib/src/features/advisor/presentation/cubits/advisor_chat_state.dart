@@ -1,7 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/infrastructure/services/context_prompt_builder.dart';
-
 class ChatMessageItem extends Equatable {
   final String id;
   final String text;
@@ -38,6 +36,13 @@ class ChatMessageItem extends Equatable {
 }
 
 class AdvisorChatState extends Equatable {
+  static const List<String> defaultSuggestedQuestions = [
+    'Thời tiết và chất lượng không khí này có thích hợp chạy bộ ngoài trời không?',
+    'Chỉ số bụi mịn hiện tại có ảnh hưởng gì đến trẻ nhỏ và người già không?',
+    'Với lượng mưa hiện tại, khu vực này có nguy cơ ngập úng không?',
+    'Tôi cần chuẩn bị trang phục và biện pháp bảo vệ gì khi ra ngoài bây giờ?',
+  ];
+
   final bool isAiEnabled;
   final List<ChatMessageItem> messages;
   final bool isStreaming;
@@ -49,7 +54,7 @@ class AdvisorChatState extends Equatable {
     this.messages = const [],
     this.isStreaming = false,
     this.errorMessage,
-    this.suggestedQuestions = ContextPromptBuilder.defaultSuggestedQuestions,
+    this.suggestedQuestions = defaultSuggestedQuestions,
   });
 
   AdvisorChatState copyWith({

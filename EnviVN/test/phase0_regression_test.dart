@@ -20,7 +20,6 @@ import 'package:envivn/src/features/details/domain/entities/details_entity.dart'
 import 'package:envivn/src/features/details/presentation/widgets/health_advisory_card.dart';
 import 'package:envivn/src/features/map/domain/entities/map_layer_type.dart';
 import 'package:envivn/src/features/map/domain/entities/station_entity.dart';
-import 'package:envivn/src/features/map/domain/entities/vietnam_monitoring_station.dart';
 import 'package:envivn/src/features/map/infrastructure/models/station_model.dart';
 import 'package:envivn/src/features/map/presentation/widgets/station_preview_card.dart';
 
@@ -32,13 +31,19 @@ class _ControlledBridge implements IAiChatBridge {
   Future<void> startSession({double? lat, double? lon}) async {}
 
   @override
-  Stream<String> generateResponseStream(String message) {
+  Stream<String> generateResponseStream(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) {
     if (shouldError) return Stream<String>.error(Exception('network down'));
     return streamController.stream;
   }
 
   @override
-  Future<String> generateResponse(String message) async => '';
+  Future<String> generateResponse(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async => '';
 
   @override
   Future<void> close() async {
@@ -67,18 +72,39 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   group('Phase 0 Regression Tests', () {
-    test('EnvConfig does not hardcode NASA FIRMS API key fallback', () {
+    test('EnvConfig exposes empty clientApiKey by default and resolves Backend gateway URL', () {
       EnvConfig.reset();
-      expect(EnvConfig.nasaFirmsMapKey, isEmpty);
+      expect(EnvConfig.clientApiKey, isEmpty);
+      expect(EnvConfig.backendBaseUrl, contains('http://'));
     });
 
-    test('StationModel.fromApiResponse leaves temperature null so live weather enrichment triggers', () {
-      final station = StationModel.fromApiResponse(
-        station: VietnamMonitoringStation.hoanKiem,
-        currentData: {'us_aqi': 80, 'pm2_5': 25.0, 'pm10': 40.0},
-      );
-      expect(station.aqi, 80);
-      expect(station.temperature, isNull);
+    test('StationModel.fromBackendJson preserves null temperature when omitted and parses live weather when present', () {
+      final stationNoTemp = StationModel.fromBackendJson({
+        'id': 'st_hn_01',
+        'name': 'Trạm Hoàn Kiếm',
+        'province': 'Hà Nội',
+        'latitude': 21.0285,
+        'longitude': 105.8542,
+        'aqi': 80,
+        'pm25': 25.0,
+        'pm10': 40.0,
+      });
+      expect(stationNoTemp.aqi, 80);
+      expect(stationNoTemp.temperature, isNull);
+      final stationWithTemp = StationModel.fromBackendJson({
+        'id': 'st_hn_01',
+        'name': 'Trạm Hoàn Kiếm',
+        'province': 'Hà Nội',
+        'latitude': 21.0285,
+        'longitude': 105.8542,
+        'aqi': 80,
+        'pm25': 25.0,
+        'pm10': 40.0,
+        'temperature': 29.4,
+        'relative_humidity': 74,
+      });
+      expect(stationWithTemp.temperature, 29.4);
+      expect(stationWithTemp.humidity, 74);
     });
 
     test('AirQualityCubit clears stale offline notice and errorMessage on fresh online success', () async {
