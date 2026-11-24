@@ -1,58 +1,48 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-import 'package:http/http.dart' as http;
-import '../configs/env_config.dart';
-import 'context_prompt_builder.dart';
-import 'model_download_service.dart';
 
-abstract class IGemmaBridge {
-  Future<bool> isModelInstalled();
-  Future<void> setModelPath(String path);
-  Future<void> createModel({required bool isInstructionTuned, int maxTokens});
-  Future<void> createChatSession({String? systemPrompt});
-  Stream<String> generateResponseAsync(String message);
+import 'package:http/http.dart' as http;
+
+import '../configs/env_config.dart';
+
+abstract class IAiChatBridge {
+  Future<void> startSession({double? lat, double? lon});
+  Stream<String> generateResponseStream(String message);
   Future<String> generateResponse(String message);
   Future<void> close();
 }
 
-class BackendSseBridge implements IGemmaBridge {
+class BackendSseBridge implements IAiChatBridge {
   final http.Client _client;
   final bool _ownsClient;
-  double? latitude;
-  double? longitude;
+  double? _latitude;
+  double? _longitude;
 
   BackendSseBridge({http.Client? client})
       : _client = client ?? http.Client(),
         _ownsClient = client == null;
 
   @override
-  Future<bool> isModelInstalled() async => true;
+  Future<void> startSession({double? lat, double? lon}) async {
+    _latitude = lat;
+    _longitude = lon;
+  }
 
   @override
-  Future<void> setModelPath(String path) async {}
-
-  @override
-  Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
-
-  @override
-  Future<void> createChatSession({String? systemPrompt}) async {}
-
-  @override
-  Stream<String> generateResponseAsync(String message) async* {
+  Stream<String> generateResponseStream(String message) async* {
     final uri = Uri.parse('${EnvConfig.backendBaseUrl}/api/v1/advisor/chat');
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
     // Never send client-controlled system prompts to backend.
     request.body = jsonEncode({
       'message': message,
-      if (latitude != null) 'lat': latitude,
-      if (longitude != null) 'lon': longitude,
+      if (_latitude != null) 'lat': _latitude,
+      if (_longitude != null) 'lon': _longitude,
     });
     final response = await _client.send(request).timeout(const Duration(seconds: 120));
     if (response.statusCode != 200) {
       await response.stream.drain<void>();
-      throw HttpException('Backend returned status ${response.statusCode}');
+      throw http.ClientException('Backend returned status ${response.statusCode}', uri);
     }
     await for (final line in response.stream.toStringStream().transform(const LineSplitter())) {
       if (line.startsWith('data: ')) {
@@ -72,7 +62,7 @@ class BackendSseBridge implements IGemmaBridge {
   @override
   Future<String> generateResponse(String message) async {
     final buffer = StringBuffer();
-    await for (final chunk in generateResponseAsync(message)) {
+    await for (final chunk in generateResponseStream(message)) {
       buffer.write(chunk);
     }
     return buffer.toString();
@@ -84,134 +74,16 @@ class BackendSseBridge implements IGemmaBridge {
   }
 }
 
-class SimulatedGemmaBridge implements IGemmaBridge {
-  String? _currentSystemPrompt;
-  bool _isInstalled = false;
-  bool _isChatActive = false;
-
-  @override
-  Future<bool> isModelInstalled() async => _isInstalled;
-
-  @override
-  Future<void> setModelPath(String path) async {
-    _isInstalled = true;
-  }
-
-  @override
-  Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
-
-  @override
-  Future<void> createChatSession({String? systemPrompt}) async {
-    _currentSystemPrompt = systemPrompt;
-    _isChatActive = true;
-  }
-
-  @override
-  Stream<String> generateResponseAsync(String message) async* {
-    if (!_isChatActive) {
-      throw StateError('Chat session is not active');
-    }
-    final fullReply = ContextPromptBuilder.generateSimulatedResponse(query: message, systemPrompt: _currentSystemPrompt ?? '');
-    final words = fullReply.split(' ');
-    for (int i = 0; i < words.length; i++) {
-      await Future.delayed(const Duration(milliseconds: 15));
-      yield i == 0 ? words[i] : ' ${words[i]}';
-    }
-  }
-
-  @override
-  Future<String> generateResponse(String message) async {
-    if (!_isChatActive) {
-      throw StateError('Chat session is not active');
-    }
-    return ContextPromptBuilder.generateSimulatedResponse(query: message, systemPrompt: _currentSystemPrompt ?? '');
-  }
-
-  @override
-  Future<void> close() async {
-    _isChatActive = false;
-  }
-}
-
 class EdgeAiInferenceService {
-  final ModelDownloadService downloadService;
-  final IGemmaBridge _bridge;
-  final Future<int> Function()? customRamProvider;
-  static const int requiredFreeRamBytes = 1400 * 1024 * 1024;
-  bool _isModelLoaded = false;
+  final IAiChatBridge _bridge;
   bool _isChatActive = false;
-  String? _currentSystemPrompt;
 
-  EdgeAiInferenceService({
-    required this.downloadService,
-    IGemmaBridge? bridge,
-    this.customRamProvider,
-  }) : _bridge = bridge ?? BackendSseBridge();
+  EdgeAiInferenceService({IAiChatBridge? bridge}) : _bridge = bridge ?? BackendSseBridge();
 
-  bool get isModelLoaded => _isModelLoaded;
   bool get isChatActive => _isChatActive;
-  String? get currentSystemPrompt => _currentSystemPrompt;
 
-  Future<int> getAvailableRamBytes() async {
-    if (customRamProvider != null) {
-      return await customRamProvider!();
-    }
-    return 3 * 1024 * 1024 * 1024;
-  }
-
-  Future<bool> hasEnoughRam({int requiredBytes = requiredFreeRamBytes}) async {
-    final available = await getAvailableRamBytes();
-    return available >= requiredBytes;
-  }
-
-  Future<bool> initModel({String? customPath}) async {
-    try {
-      final hasRam = await hasEnoughRam();
-      if (!hasRam) {
-        _isModelLoaded = false;
-        return false;
-      }
-      if (_bridge is BackendSseBridge) {
-        _isModelLoaded = true;
-        return true;
-      }
-      String? path = customPath;
-      if (path == null) {
-        final modelFile = await downloadService.getModelFile();
-        if (modelFile.existsSync() && modelFile.lengthSync() > 0) {
-          path = modelFile.path;
-        }
-      }
-      if (path == null || !File(path).existsSync()) {
-        return false;
-      }
-      await _bridge.setModelPath(path);
-      await _bridge.createModel(isInstructionTuned: true, maxTokens: 2048);
-      _isModelLoaded = true;
-      return true;
-    } catch (_) {
-      _isModelLoaded = false;
-      return false;
-    }
-  }
-
-  Future<void> startChatSession({required String systemPrompt, double? lat, double? lon}) async {
-    final hasRam = await hasEnoughRam();
-    if (!hasRam) {
-      throw StateError('Thiết bị không đủ RAM trống để khởi chạy mô hình AI (cần tối thiểu 1.4 GB).');
-    }
-    if (!_isModelLoaded) {
-      final initialized = await initModel();
-      if (!initialized) {
-        throw StateError('Model is not installed or downloaded yet.');
-      }
-    }
-    if (_bridge is BackendSseBridge) {
-      _bridge.latitude = lat;
-      _bridge.longitude = lon;
-    }
-    _currentSystemPrompt = systemPrompt;
-    await _bridge.createChatSession(systemPrompt: systemPrompt);
+  Future<void> startChatSession({double? lat, double? lon}) async {
+    await _bridge.startSession(lat: lat, lon: lon);
     _isChatActive = true;
   }
 
@@ -219,26 +91,23 @@ class EdgeAiInferenceService {
     if (!_isChatActive) {
       throw StateError('Please call startChatSession before sending messages.');
     }
-    yield* _bridge.generateResponseAsync(userMessage);
+    yield* _bridge.generateResponseStream(userMessage);
   }
 
   Future<String> sendMessage(String userMessage) async {
     if (!_isChatActive) {
       throw StateError('Please call startChatSession before sending messages.');
     }
-    return await _bridge.generateResponse(userMessage);
+    return _bridge.generateResponse(userMessage);
   }
 
-  Future<void> resetChatSession({String? newSystemPrompt}) async {
-    final prompt = newSystemPrompt ?? _currentSystemPrompt;
-    await _bridge.createChatSession(systemPrompt: prompt);
-    _currentSystemPrompt = prompt;
+  Future<void> resetChatSession({double? lat, double? lon}) async {
+    await _bridge.startSession(lat: lat, lon: lon);
     _isChatActive = true;
   }
 
   Future<void> dispose() async {
     _isChatActive = false;
-    _isModelLoaded = false;
     await _bridge.close();
   }
 }

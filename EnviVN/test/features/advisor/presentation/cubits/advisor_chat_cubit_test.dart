@@ -1,58 +1,45 @@
-import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
-import 'package:envivn/src/core/domain/entities/model_download_state.dart';
-import 'package:envivn/src/core/infrastructure/datasources/local/local_storage.dart';
 import 'package:envivn/src/core/infrastructure/services/edge_ai_inference_service.dart';
-import 'package:envivn/src/core/infrastructure/services/model_download_service.dart';
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_chat_cubit.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
+
+class _StubChatBridge implements IAiChatBridge {
+  bool shouldError = false;
+
+  @override
+  Future<void> startSession({double? lat, double? lon}) async {}
+
+  @override
+  Stream<String> generateResponseStream(String message) async* {
+    if (shouldError) throw Exception('offline');
+    yield 'Thời tiết phù hợp ';
+    yield 'để chạy bộ nhẹ.';
+  }
+
+  @override
+  Future<String> generateResponse(String message) async => 'Thời tiết phù hợp để chạy bộ nhẹ.';
+
+  @override
+  Future<void> close() async {}
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late Directory tempDir;
-  late LocalStorage localStorage;
-  late ModelDownloadService downloadService;
+  late _StubChatBridge bridge;
   late EdgeAiInferenceService inferenceService;
-  late SimulatedGemmaBridge bridge;
   late AdvisorChatCubit chatCubit;
 
-  setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    localStorage = LocalStorage(prefs: prefs);
-
-    tempDir = Directory.systemTemp.createTempSync('advisor_chat_test_');
-
-    downloadService = ModelDownloadService(
-      localStorage: localStorage,
-      customDirectoryProvider: () async => tempDir,
-    );
-
-    bridge = SimulatedGemmaBridge();
-
-    inferenceService = EdgeAiInferenceService(
-      downloadService: downloadService,
-      bridge: bridge,
-    );
-
-    chatCubit = AdvisorChatCubit(
-      downloadService: downloadService,
-      inferenceService: inferenceService,
-      localStorage: localStorage,
-    );
+  setUp(() {
+    bridge = _StubChatBridge();
+    inferenceService = EdgeAiInferenceService(bridge: bridge);
+    chatCubit = AdvisorChatCubit(inferenceService: inferenceService);
   });
 
   tearDown(() async {
     await chatCubit.close();
     await inferenceService.dispose();
-    downloadService.dispose();
-    if (tempDir.existsSync()) {
-      tempDir.deleteSync(recursive: true);
-    }
   });
 
   group('AdvisorChatCubit Tests', () {
@@ -65,163 +52,49 @@ void main() {
     test('toggleAi toggles AI enabled status', () {
       chatCubit.toggleAi(true);
       expect(chatCubit.state.isAiEnabled, isTrue);
-
       chatCubit.toggleAi(false);
       expect(chatCubit.state.isAiEnabled, isFalse);
     });
 
-    test('initChat populates welcome message when model is ready', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-      await downloadService.init();
-
-      final location = AppLocationEntity.city(
-        name: 'Hà Nội',
-        province: 'Hà Nội',
-        latitude: 21.0285,
-        longitude: 105.8542,
-      );
-
-      const weather = DetailsEntity(currentTemp: 28.0, relativeHumidity: 65);
-
-      const airQuality = AirQualityEntity(usAqi: 75, pm25: 25.0);
-
-      await chatCubit.initChat(
-        location: location,
-        weather: weather,
-        airQuality: airQuality,
-      );
-
+    test('initChat populates welcome message with location name', () async {
+      final location = AppLocationEntity.city(name: 'Hà Nội', province: 'Hà Nội', latitude: 21.0285, longitude: 105.8542);
+      await chatCubit.initChat(location: location);
       expect(chatCubit.state.messages.length, equals(1));
       expect(chatCubit.state.messages.first.isUser, isFalse);
       expect(chatCubit.state.messages.first.text, contains('Hà Nội'));
     });
 
-    test(
-      'sendMessage appends user message and receives streamed bot response',
-      () async {
-        final modelFile = await downloadService.getModelFile();
-        modelFile.writeAsBytesSync(List.filled(1024, 1));
-        await downloadService.init();
-
-        final location = AppLocationEntity.city(
-          name: 'Đà Nẵng',
-          province: 'Đà Nẵng',
-          latitude: 16.0544,
-          longitude: 108.2022,
-        );
-
-        await chatCubit.initChat(
-          location: location,
-          weather: const DetailsEntity(currentTemp: 26.0),
-          airQuality: const AirQualityEntity(usAqi: 40),
-        );
-
-        await chatCubit.sendMessage('Có nên chạy bộ không?');
-
-        expect(chatCubit.state.messages.length, equals(3));
-        expect(chatCubit.state.messages[1].isUser, isTrue);
-        expect(
-          chatCubit.state.messages[1].text,
-          equals('Có nên chạy bộ không?'),
-        );
-
-        final botMessage = chatCubit.state.messages[2];
-        expect(botMessage.isUser, isFalse);
-        expect(botMessage.isStreaming, isFalse);
-        expect(botMessage.text, contains('chạy bộ'));
-      },
-    );
+    test('sendMessage appends user message and receives streamed bot response', () async {
+      final location = AppLocationEntity.city(name: 'Đà Nẵng', province: 'Đà Nẵng', latitude: 16.0544, longitude: 108.2022);
+      await chatCubit.initChat(location: location);
+      await chatCubit.sendMessage('Có nên chạy bộ không?');
+      expect(chatCubit.state.messages.length, equals(3));
+      expect(chatCubit.state.messages[1].isUser, isTrue);
+      expect(chatCubit.state.messages[1].text, equals('Có nên chạy bộ không?'));
+      final botMessage = chatCubit.state.messages[2];
+      expect(botMessage.isUser, isFalse);
+      expect(botMessage.isStreaming, isFalse);
+      expect(botMessage.text, contains('chạy bộ'));
+    });
 
     test('clearChat resets messages and re-initializes chat session', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-      await downloadService.init();
-
-      final location = AppLocationEntity.city(
-        name: 'TP. Hồ Chí Minh',
-        province: 'TP. Hồ Chí Minh',
-        latitude: 10.7769,
-        longitude: 106.7009,
-      );
-
-      await chatCubit.initChat(
-        location: location,
-        weather: const DetailsEntity(),
-        airQuality: const AirQualityEntity(),
-      );
-
+      final location = AppLocationEntity.city(name: 'TP. Hồ Chí Minh', province: 'TP. Hồ Chí Minh', latitude: 10.7769, longitude: 106.7009);
+      await chatCubit.initChat(location: location);
       await chatCubit.sendMessage('Xin chào');
       expect(chatCubit.state.messages.length, greaterThanOrEqualTo(2));
-
-      chatCubit.clearChat(
-        location: location,
-        weather: const DetailsEntity(),
-        airQuality: const AirQualityEntity(),
-      );
-
+      chatCubit.clearChat(location: location);
       await pumpEventQueue();
-
       expect(chatCubit.state.messages.length, equals(1));
     });
 
-    test('download lifecycle delegation updates downloadState', () async {
-      expect(
-        chatCubit.state.downloadState.status,
-        equals(ModelDownloadStatus.notDownloaded),
-      );
-
-      final tempFile = await downloadService.getTempDownloadFile();
-      tempFile.writeAsBytesSync(List.filled(2048, 5));
-      await downloadService.init();
-
-      await pumpEventQueue();
-
-      expect(
-        chatCubit.state.downloadState.status,
-        equals(ModelDownloadStatus.paused),
-      );
+    test('sendMessage surfaces errorMessage on backend failure instead of faking reply', () async {
+      final location = AppLocationEntity.defaultLocation;
+      await chatCubit.initChat(location: location);
+      bridge.shouldError = true;
+      await chatCubit.sendMessage('Hỏi thời tiết');
+      expect(chatCubit.state.isStreaming, isFalse);
+      expect(chatCubit.state.errorMessage, isNotNull);
+      expect(chatCubit.state.messages.last.text, contains('Không thể kết nối'));
     });
-
-    test(
-      'initChat switches isAiEnabled to false and emits warning if RAM < 1.4 GB',
-      () async {
-        final lowRamInference = EdgeAiInferenceService(
-          downloadService: downloadService,
-          bridge: bridge,
-          customRamProvider: () async => 800 * 1024 * 1024,
-        );
-
-        final cubit = AdvisorChatCubit(
-          downloadService: downloadService,
-          inferenceService: lowRamInference,
-          localStorage: localStorage,
-        );
-
-        final modelFile = await downloadService.getModelFile();
-        modelFile.writeAsBytesSync(List.filled(1024, 1));
-        await downloadService.init();
-
-        cubit.toggleAi(true);
-        expect(cubit.state.isAiEnabled, isTrue);
-
-        await cubit.initChat(
-          location: AppLocationEntity.city(
-            name: 'Hà Nội',
-            province: 'Hà Nội',
-            latitude: 21.0,
-            longitude: 105.0,
-          ),
-          weather: const DetailsEntity(),
-          airQuality: const AirQualityEntity(),
-        );
-
-        expect(cubit.state.isAiEnabled, isFalse);
-        expect(cubit.state.errorMessage, contains('1.4 GB RAM'));
-
-        await cubit.close();
-        await lowRamInference.dispose();
-      },
-    );
   });
 }

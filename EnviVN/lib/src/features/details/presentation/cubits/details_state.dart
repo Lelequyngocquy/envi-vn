@@ -19,8 +19,6 @@ class DetailsState extends Equatable {
     this.activeDetailTab = DetailTab.all,
   });
 
-  DetailsEntity get weather => details;
-
   bool get showWeatherSection =>
       activeDetailTab == DetailTab.all || activeDetailTab == DetailTab.weather;
 
@@ -31,7 +29,6 @@ class DetailsState extends Equatable {
   DetailsState copyWith({
     DetailsStatus? status,
     DetailsEntity? details,
-    DetailsEntity? weather,
     String? errorMessage,
     bool clearError = false,
     String? noticeMessage,
@@ -40,7 +37,7 @@ class DetailsState extends Equatable {
   }) {
     return DetailsState(
       status: status ?? this.status,
-      details: details ?? weather ?? this.details,
+      details: details ?? this.details,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       noticeMessage: clearNotice ? null : (noticeMessage ?? this.noticeMessage),
       activeDetailTab: activeDetailTab ?? this.activeDetailTab,
@@ -56,7 +53,3 @@ class DetailsState extends Equatable {
     activeDetailTab,
   ];
 }
-
-// Backward-compatibility aliases
-typedef WeatherStatus = DetailsStatus;
-typedef WeatherState = DetailsState;

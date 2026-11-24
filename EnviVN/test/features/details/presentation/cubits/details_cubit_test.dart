@@ -16,10 +16,6 @@ class FakeDetailsRepository implements IDetailsRepository {
       cached;
 
   @override
-  DetailsEntity? getCachedWeather({double? latitude, double? longitude}) =>
-      cached;
-
-  @override
   Future<BaseResult<DetailsEntity>> getDetailsForecast({
     required double latitude,
     required double longitude,
@@ -32,17 +28,6 @@ class FakeDetailsRepository implements IDetailsRepository {
           data: const DetailsEntity(currentTemp: 28.0, relativeHumidity: 70),
         );
   }
-
-  @override
-  Future<BaseResult<DetailsEntity>> getWeatherForecast({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => getDetailsForecast(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
 }
 
 void main() {
@@ -133,28 +118,13 @@ void main() {
       },
     );
 
-    test(
-      'fetchWeather and fetchForLocation delegate coordinates properly',
-      () async {
-        cubit = DetailsCubit(repository: repository);
-        repository.nextResult = BaseResult<DetailsEntity>(
-          success: true,
-          data: const DetailsEntity(currentTemp: 22.0),
-        );
-
-        await cubit.fetchWeather(latitude: 16.0, longitude: 108.0);
-        expect(cubit.state.status, equals(DetailsStatus.success));
-
-        await cubit.fetchForLocation(
-          AppLocationEntity.city(
-            name: 'Hải Phòng',
-            province: 'Hải Phòng',
-            latitude: 20.8,
-            longitude: 106.6,
-          ),
-        );
-        expect(cubit.state.status, equals(DetailsStatus.success));
-      },
-    );
+    test('fetchForLocation delegates coordinates properly', () async {
+      cubit = DetailsCubit(repository: repository);
+      repository.nextResult = BaseResult<DetailsEntity>(success: true, data: const DetailsEntity(currentTemp: 22.0));
+      await cubit.fetchDetails(latitude: 16.0, longitude: 108.0);
+      expect(cubit.state.status, equals(DetailsStatus.success));
+      await cubit.fetchForLocation(AppLocationEntity.city(name: 'Hải Phòng', province: 'Hải Phòng', latitude: 20.8, longitude: 106.6));
+      expect(cubit.state.status, equals(DetailsStatus.success));
+    });
   });
 }

@@ -37,10 +37,6 @@ class FakeDetailsRepository implements IDetailsRepository {
       null;
 
   @override
-  DetailsEntity? getCachedWeather({double? latitude, double? longitude}) =>
-      null;
-
-  @override
   Future<BaseResult<DetailsEntity>> getDetailsForecast({
     required double latitude,
     required double longitude,
@@ -51,17 +47,6 @@ class FakeDetailsRepository implements IDetailsRepository {
       data: const DetailsEntity(currentTemp: 30.0),
     );
   }
-
-  @override
-  Future<BaseResult<DetailsEntity>> getWeatherForecast({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => getDetailsForecast(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
 }
 
 class FakeAirQualityRepository implements IAirQualityRepository {

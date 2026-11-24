@@ -3,5 +3,3 @@ class DetailsPaths {
 
   static const String forecast = '/v1/forecast';
 }
-
-typedef WeatherPaths = DetailsPaths;

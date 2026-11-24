@@ -135,6 +135,3 @@ class HourlyDetailsSlider extends StatelessWidget {
     );
   }
 }
-
-// Backward-compatibility alias
-typedef HourlyWeatherSlider = HourlyDetailsSlider;

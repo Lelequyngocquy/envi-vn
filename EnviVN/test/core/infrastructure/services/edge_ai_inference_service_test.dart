@@ -1,206 +1,150 @@
-import 'dart:io';
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:envivn/src/core/infrastructure/datasources/local/local_storage.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+
+import 'package:envivn/src/core/infrastructure/configs/env_config.dart';
 import 'package:envivn/src/core/infrastructure/services/edge_ai_inference_service.dart';
-import 'package:envivn/src/core/infrastructure/services/model_download_service.dart';
+
+class _FakeChatBridge implements IAiChatBridge {
+  double? lastLat;
+  double? lastLon;
+  bool closed = false;
+  List<String> chunks = const ['Xin ', 'chào ', 'EnviVN!'];
+
+  @override
+  Future<void> startSession({double? lat, double? lon}) async {
+    lastLat = lat;
+    lastLon = lon;
+  }
+
+  @override
+  Stream<String> generateResponseStream(String message) async* {
+    for (final chunk in chunks) {
+      await Future<void>.delayed(Duration.zero);
+      yield chunk;
+    }
+  }
+
+  @override
+  Future<String> generateResponse(String message) async => chunks.join();
+
+  @override
+  Future<void> close() async {
+    closed = true;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late Directory tempDir;
-  late LocalStorage localStorage;
-  late ModelDownloadService downloadService;
-  late EdgeAiInferenceService inferenceService;
-  late SimulatedGemmaBridge bridge;
+  group('BackendSseBridge Tests', () {
+    setUp(() {
+      EnvConfig.reset();
+      EnvConfig.loadFromString('BACKEND_BASE_URL=http://localhost:8080');
+    });
 
-  setUp(() async {
-    SharedPreferences.setMockInitialValues({});
-    final prefs = await SharedPreferences.getInstance();
-    localStorage = LocalStorage(prefs: prefs);
+    test('streams UTF-8 SSE chunks across boundaries and never sends client system prompt', () async {
+      Map<String, dynamic>? capturedBody;
+      Uri? capturedUri;
+      final mockClient = MockClient.streaming((request, bodyStream) async {
+        capturedUri = request.url;
+        final rawBody = await bodyStream.bytesToString();
+        capturedBody = jsonDecode(rawBody) as Map<String, dynamic>;
+        final payload = 'data: {"content":"Thời tiết ","done":false}\n\n'
+            'data: not-valid-json\n'
+            'data: {"content":"trong lành.","done":false}\n'
+            'data: [DONE]\n'
+            'data: {"content":"ignored","done":false}\n';
+        final bytes = utf8.encode(payload);
+        // Split mid-stream to verify line buffering across chunks.
+        final split = bytes.length ~/ 2;
+        return http.StreamedResponse(
+          Stream<List<int>>.fromIterable([bytes.sublist(0, split), bytes.sublist(split)]),
+          200,
+          headers: {'content-type': 'text/event-stream'},
+        );
+      });
+      final bridge = BackendSseBridge(client: mockClient);
+      await bridge.startSession(lat: 21.0285, lon: 105.8542);
+      final chunks = await bridge.generateResponseStream('Có nên chạy bộ?').toList();
+      expect(capturedUri.toString(), 'http://localhost:8080/api/v1/advisor/chat');
+      expect(capturedBody?['message'], 'Có nên chạy bộ?');
+      expect(capturedBody?['lat'], 21.0285);
+      expect(capturedBody?['lon'], 105.8542);
+      expect(capturedBody?.containsKey('system'), isFalse);
+      expect(chunks, ['Thời tiết ', 'trong lành.']);
+      await bridge.close();
+    });
 
-    tempDir = Directory.systemTemp.createTempSync('edge_ai_test_');
+    test('generateResponse concatenates full streamed SSE response', () async {
+      final mockClient = MockClient.streaming((request, bodyStream) async {
+        await bodyStream.drain<void>();
+        const payload = 'data: {"content":"AQI ","done":false}\ndata: {"content":"tốt","done":false}\ndata: [DONE]\n';
+        return http.StreamedResponse(Stream<List<int>>.value(utf8.encode(payload)), 200);
+      });
+      final bridge = BackendSseBridge(client: mockClient);
+      await bridge.startSession(lat: 16.05, lon: 108.20);
+      final text = await bridge.generateResponse('Hỏi AQI');
+      expect(text, 'AQI tốt');
+      await bridge.close();
+    });
 
-    downloadService = ModelDownloadService(
-      localStorage: localStorage,
-      customDirectoryProvider: () async => tempDir,
-    );
-
-    bridge = SimulatedGemmaBridge();
-
-    inferenceService = EdgeAiInferenceService(
-      downloadService: downloadService,
-      bridge: bridge,
-    );
-  });
-
-  tearDown(() async {
-    await inferenceService.dispose();
-    downloadService.dispose();
-    if (tempDir.existsSync()) {
-      tempDir.deleteSync(recursive: true);
-    }
+    test('drains response stream and throws ClientException on non-200 status', () async {
+      bool drained = false;
+      final mockClient = MockClient.streaming((request, bodyStream) async {
+        await bodyStream.drain<void>();
+        final stream = Stream<List<int>>.fromIterable([utf8.encode('Upstream error')]).map((chunk) {
+          drained = true;
+          return chunk;
+        });
+        return http.StreamedResponse(stream, 502);
+      });
+      final bridge = BackendSseBridge(client: mockClient);
+      await expectLater(bridge.generateResponseStream('Xin chào').toList(), throwsA(isA<http.ClientException>()));
+      expect(drained, isTrue);
+      await bridge.close();
+    });
   });
 
   group('EdgeAiInferenceService Tests', () {
-    test('initModel returns false when model file does not exist', () async {
-      final success = await inferenceService.initModel();
+    late _FakeChatBridge bridge;
+    late EdgeAiInferenceService service;
 
-      expect(success, isFalse);
-      expect(inferenceService.isModelLoaded, isFalse);
+    setUp(() {
+      bridge = _FakeChatBridge();
+      service = EdgeAiInferenceService(bridge: bridge);
     });
 
-    test('initModel succeeds and loads model when file exists', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-      final success = await inferenceService.initModel();
-
-      expect(success, isTrue);
-      expect(inferenceService.isModelLoaded, isTrue);
-      expect(await bridge.isModelInstalled(), isTrue);
+    tearDown(() async {
+      await service.dispose();
     });
 
-    test(
-      'startChatSession and sendMessage return appropriate response',
-      () async {
-        final modelFile = await downloadService.getModelFile();
-        modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-        const systemPrompt = '''[HỆ THỐNG CỐ VẤN MÔI TRƯỜNG ENVIVN]
-- Vị trí: Đà Nẵng (16.0544, 108.2022)
-- Thời tiết: 27.0°C, Độ ẩm 70%, Gió 15.0km/h, UV 4.0
-- Chất lượng không khí: AQI 45 (Tốt (Trong lành)), PM2.5: 12.0 µg/m³
-- Cảnh báo đặc biệt: Mưa 0.0mm, Nguy cơ ngập: Thấp''';
-
-        await inferenceService.startChatSession(systemPrompt: systemPrompt);
-
-        expect(inferenceService.isChatActive, isTrue);
-        expect(inferenceService.currentSystemPrompt, equals(systemPrompt));
-
-        final response = await inferenceService.sendMessage(
-          'Tôi có nên chạy bộ không?',
-        );
-
-        expect(response, isNotEmpty);
-        expect(response, contains('lý tưởng'));
-      },
-    );
-
-    test('sendMessageStream yields chunks asynchronously', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-      const systemPrompt = '''[HỆ THỐNG CỐ VẤN MÔI TRƯỜNG ENVIVN]
-- Vị trí: TP. Hồ Chí Minh (10.7769, 106.7009)
-- Thời tiết: 33.0°C, Độ ẩm 80%, Gió 8.0km/h, UV 9.0
-- Chất lượng không khí: AQI 60 (Trung bình (Chấp nhận được)), PM2.5: 22.0 µg/m³
-- Cảnh báo đặc biệt: Mưa 0.0mm, Nguy cơ ngập: Thấp''';
-
-      await inferenceService.startChatSession(systemPrompt: systemPrompt);
-
-      final chunks = <String>[];
-      await for (final token in inferenceService.sendMessageStream(
-        'Trẻ nhỏ ra ngoài được không?',
-      )) {
-        chunks.add(token);
-      }
-
-      expect(chunks.length, greaterThan(1));
-      final fullText = chunks.join();
-      expect(fullText, contains('an toàn cho trẻ nhỏ'));
+    test('throws StateError when sending before startChatSession', () {
+      expect(() => service.sendMessage('test'), throwsStateError);
+      expect(() => service.sendMessageStream('test').toList(), throwsStateError);
     });
 
-    test(
-      'resetChatSession updates system prompt and maintains active chat',
-      () async {
-        final modelFile = await downloadService.getModelFile();
-        modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-        await inferenceService.startChatSession(systemPrompt: 'prompt1');
-        expect(inferenceService.currentSystemPrompt, equals('prompt1'));
-
-        await inferenceService.resetChatSession(newSystemPrompt: 'prompt2');
-        expect(inferenceService.currentSystemPrompt, equals('prompt2'));
-        expect(inferenceService.isChatActive, isTrue);
-      },
-    );
-
-    test(
-      'sendMessage throws StateError when chat session is not started',
-      () async {
-        expect(() => inferenceService.sendMessage('test'), throwsStateError);
-      },
-    );
-
-    test('dispose cleans up chat and model states', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-      await inferenceService.startChatSession(systemPrompt: 'prompt');
-      await inferenceService.dispose();
-
-      expect(inferenceService.isChatActive, isFalse);
-      expect(inferenceService.isModelLoaded, isFalse);
+    test('startChatSession forwards coordinates and streams chunks', () async {
+      await service.startChatSession(lat: 10.77, lon: 106.70);
+      expect(service.isChatActive, isTrue);
+      expect(bridge.lastLat, 10.77);
+      expect(bridge.lastLon, 106.70);
+      final chunks = await service.sendMessageStream('Chạy bộ?').toList();
+      expect(chunks.join(), 'Xin chào EnviVN!');
+      expect(await service.sendMessage('Chạy bộ?'), 'Xin chào EnviVN!');
     });
 
-    test(
-      'hasEnoughRam evaluates RAM thresholds correctly with custom provider',
-      () async {
-        final highRamService = EdgeAiInferenceService(
-          downloadService: downloadService,
-          bridge: bridge,
-          customRamProvider: () async => 2000 * 1024 * 1024,
-        );
-        expect(await highRamService.hasEnoughRam(), isTrue);
-
-        final lowRamService = EdgeAiInferenceService(
-          downloadService: downloadService,
-          bridge: bridge,
-          customRamProvider: () async => 1000 * 1024 * 1024,
-        );
-        expect(await lowRamService.hasEnoughRam(), isFalse);
-      },
-    );
-
-    test('initModel fails when RAM is less than required 1.4 GB', () async {
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-      final lowRamService = EdgeAiInferenceService(
-        downloadService: downloadService,
-        bridge: bridge,
-        customRamProvider: () async => 800 * 1024 * 1024,
-      );
-
-      final success = await lowRamService.initModel();
-      expect(success, isFalse);
-      expect(lowRamService.isModelLoaded, isFalse);
+    test('resetChatSession updates coordinates and dispose closes bridge', () async {
+      await service.startChatSession(lat: 21.0, lon: 105.0);
+      await service.resetChatSession(lat: 16.0, lon: 108.0);
+      expect(bridge.lastLat, 16.0);
+      expect(bridge.lastLon, 108.0);
+      await service.dispose();
+      expect(service.isChatActive, isFalse);
+      expect(bridge.closed, isTrue);
     });
-
-    test(
-      'startChatSession throws StateError when available RAM is below 1.4 GB',
-      () async {
-        final modelFile = await downloadService.getModelFile();
-        modelFile.writeAsBytesSync(List.filled(1024, 1));
-
-        final lowRamService = EdgeAiInferenceService(
-          downloadService: downloadService,
-          bridge: bridge,
-          customRamProvider: () async => 800 * 1024 * 1024,
-        );
-
-        expect(
-          () => lowRamService.startChatSession(systemPrompt: 'test'),
-          throwsA(
-            isA<StateError>().having(
-              (e) => e.message,
-              'message',
-              contains('RAM'),
-            ),
-          ),
-        );
-      },
-    );
   });
 }

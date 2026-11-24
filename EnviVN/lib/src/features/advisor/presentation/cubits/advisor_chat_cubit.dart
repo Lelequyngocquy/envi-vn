@@ -2,94 +2,38 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/domain/entities/app_location_entity.dart';
-import '../../../../core/domain/entities/model_download_state.dart';
-import '../../../../core/infrastructure/datasources/local/local_storage.dart';
-import '../../../../core/infrastructure/services/context_prompt_builder.dart';
 import '../../../../core/infrastructure/services/edge_ai_inference_service.dart';
-import '../../../../core/infrastructure/services/model_download_service.dart';
-import '../../../air_quality/domain/entities/air_quality_entity.dart';
-import '../../../details/domain/entities/details_entity.dart';
 import 'advisor_chat_state.dart';
 
 class AdvisorChatCubit extends Cubit<AdvisorChatState> {
-  final ModelDownloadService downloadService;
   final EdgeAiInferenceService inferenceService;
-  final LocalStorage localStorage;
-
-  StreamSubscription<ModelDownloadState>? _downloadSub;
   StreamSubscription<String>? _streamSub;
   Completer<void>? _activeCompleter;
 
-  AdvisorChatCubit({
-    required this.downloadService,
-    required this.inferenceService,
-    required this.localStorage,
-  }) : super(AdvisorChatState(downloadState: downloadService.currentState)) {
-    _downloadSub = downloadService.stateStream.listen((dState) {
-      if (isClosed) return;
-      emit(state.copyWith(downloadState: dState));
-    });
-  }
+  AdvisorChatCubit({required this.inferenceService}) : super(const AdvisorChatState());
 
   void toggleAi(bool enabled) {
     if (isClosed) return;
     emit(state.copyWith(isAiEnabled: enabled));
   }
 
-  Future<void> initChat({
-    required AppLocationEntity location,
-    required DetailsEntity weather,
-    required AirQualityEntity airQuality,
-  }) async {
-    await downloadService.init();
-    if (isClosed) return;
-    final isReady = await downloadService.isModelReady();
-    if (isClosed) return;
-    if (!isReady) {
-      final canInit = await inferenceService.initModel();
-      if (isClosed || !canInit) return;
-      emit(state.copyWith(downloadState: const ModelDownloadState(status: ModelDownloadStatus.ready, progress: 1.0)));
-    }
-    final hasEnoughRam = await inferenceService.hasEnoughRam();
-    if (isClosed) return;
-    if (!hasEnoughRam) {
-      emit(state.copyWith(errorMessage: 'Thiết bị còn ít hơn 1.4 GB RAM trống. Vui lòng đóng bớt ứng dụng nền hoặc sử dụng chế độ Cố vấn Tiêu chuẩn.', isAiEnabled: false));
-      return;
-    }
-    final systemPrompt = ContextPromptBuilder.buildSystemPrompt(location: location, weather: weather, airQuality: airQuality);
+  Future<void> initChat({required AppLocationEntity location}) async {
     try {
-      await inferenceService.startChatSession(systemPrompt: systemPrompt, lat: location.latitude, lon: location.longitude);
+      await inferenceService.startChatSession(lat: location.latitude, lon: location.longitude);
       if (isClosed) return;
       if (state.messages.isEmpty) {
-        final greeting = ChatMessageItem(id: 'welcome_${DateTime.now().millisecondsSinceEpoch}', text: 'Xin chào! Tôi là Trợ lý AI EnviVN. Tôi đã nạp toàn bộ dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?', isUser: false, timestamp: DateTime.now());
+        final greeting = ChatMessageItem(
+          id: 'welcome_${DateTime.now().millisecondsSinceEpoch}',
+          text: 'Xin chào! Tôi là Trợ lý AI EnviVN. Tôi đã sẵn sàng phân tích dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?',
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
         emit(state.copyWith(messages: [greeting], clearError: true));
       }
     } catch (_) {
       if (isClosed) return;
       emit(state.copyWith(errorMessage: 'Không thể khởi chạy phiên trợ lý AI lúc này.'));
     }
-  }
-
-  Future<void> startDownload() async {
-    await downloadService.startDownload();
-  }
-
-  Future<void> pauseDownload() async {
-    await downloadService.pauseDownload();
-  }
-
-  Future<void> resumeDownload() async {
-    await downloadService.resumeDownload();
-  }
-
-  Future<void> cancelDownload() async {
-    await downloadService.cancelDownload();
-  }
-
-  Future<void> deleteModel() async {
-    await downloadService.deleteModel();
-    if (isClosed) return;
-    emit(state.copyWith(messages: []));
   }
 
   void _completeActiveStream() {
@@ -172,22 +116,17 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
     }
   }
 
-  void clearChat({
-    required AppLocationEntity location,
-    required DetailsEntity weather,
-    required AirQualityEntity airQuality,
-  }) {
+  void clearChat({required AppLocationEntity location}) {
     _streamSub?.cancel();
     _streamSub = null;
     _completeActiveStream();
     if (isClosed) return;
     emit(state.copyWith(messages: [], isStreaming: false, clearError: true));
-    initChat(location: location, weather: weather, airQuality: airQuality);
+    initChat(location: location);
   }
 
   @override
   Future<void> close() async {
-    await _downloadSub?.cancel();
     await _streamSub?.cancel();
     _completeActiveStream();
     return super.close();

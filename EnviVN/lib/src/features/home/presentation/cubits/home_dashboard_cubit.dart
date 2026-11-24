@@ -23,8 +23,6 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     required this.airQualityCubit,
   }) : super(const HomeDashboardState());
 
-  DetailsCubit get weatherCubit => detailsCubit;
-
   Future<void> initDashboard() async {
     emit(state.copyWith(status: DashboardStatus.loading));
     final savedCity = storage.getSelectedCity();

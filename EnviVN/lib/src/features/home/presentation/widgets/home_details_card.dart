@@ -15,12 +15,6 @@ class HomeDetailsCard extends StatelessWidget {
 
   const HomeDetailsCard({super.key, required this.details, this.onDetailTap});
 
-  const HomeDetailsCard.fromWeather({
-    super.key,
-    required DetailsEntity weather,
-    this.onDetailTap,
-  }) : details = weather;
-
   @override
   Widget build(BuildContext context) {
     final weather = details;
@@ -411,6 +405,3 @@ class _WeatherPillItem extends StatelessWidget {
     );
   }
 }
-
-// Backward-compatibility alias
-typedef HomeWeatherCard = HomeDetailsCard;

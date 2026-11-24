@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/domain/entities/model_download_state.dart';
 import '../../../../core/infrastructure/services/context_prompt_builder.dart';
 
 class ChatMessageItem extends Equatable {
@@ -40,7 +39,6 @@ class ChatMessageItem extends Equatable {
 
 class AdvisorChatState extends Equatable {
   final bool isAiEnabled;
-  final ModelDownloadState downloadState;
   final List<ChatMessageItem> messages;
   final bool isStreaming;
   final String? errorMessage;
@@ -48,7 +46,6 @@ class AdvisorChatState extends Equatable {
 
   const AdvisorChatState({
     this.isAiEnabled = false,
-    this.downloadState = const ModelDownloadState(),
     this.messages = const [],
     this.isStreaming = false,
     this.errorMessage,
@@ -57,7 +54,6 @@ class AdvisorChatState extends Equatable {
 
   AdvisorChatState copyWith({
     bool? isAiEnabled,
-    ModelDownloadState? downloadState,
     List<ChatMessageItem>? messages,
     bool? isStreaming,
     String? errorMessage,
@@ -66,7 +62,6 @@ class AdvisorChatState extends Equatable {
   }) {
     return AdvisorChatState(
       isAiEnabled: isAiEnabled ?? this.isAiEnabled,
-      downloadState: downloadState ?? this.downloadState,
       messages: messages ?? this.messages,
       isStreaming: isStreaming ?? this.isStreaming,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -75,12 +70,5 @@ class AdvisorChatState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [
-    isAiEnabled,
-    downloadState,
-    messages,
-    isStreaming,
-    errorMessage,
-    suggestedQuestions,
-  ];
+  List<Object?> get props => [isAiEnabled, messages, isStreaming, errorMessage, suggestedQuestions];
 }

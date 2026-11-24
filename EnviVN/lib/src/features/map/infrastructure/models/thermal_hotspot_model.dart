@@ -330,6 +330,3 @@ class ThermalHotspotModel {
     ),
   ];
 }
-
-/// Alias thuận tiện để tương thích ngược nếu cần
-typedef ThermalHotspot = ThermalHotspotModel;

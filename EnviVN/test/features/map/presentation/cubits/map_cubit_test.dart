@@ -54,24 +54,7 @@ class FakeDetailsRepository implements IDetailsRepository {
   @override
   DetailsEntity? getCachedDetails({double? latitude, double? longitude}) =>
       null;
-
-  @override
-  Future<BaseResult<DetailsEntity>> getWeatherForecast({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => getDetailsForecast(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
-
-  @override
-  DetailsEntity? getCachedWeather({double? latitude, double? longitude}) =>
-      null;
 }
-
-typedef FakeWeatherRepository = FakeDetailsRepository;
 
 class FakeAirQualityRepository implements IAirQualityRepository {
   @override
@@ -95,16 +78,16 @@ class FakeAirQualityRepository implements IAirQualityRepository {
 void main() {
   late MapCubit cubit;
   late FakeMapRepository mapRepo;
-  late FakeWeatherRepository weatherRepo;
+  late FakeDetailsRepository detailsRepo;
   late FakeAirQualityRepository airRepo;
 
   setUp(() {
     mapRepo = FakeMapRepository();
-    weatherRepo = FakeWeatherRepository();
+    detailsRepo = FakeDetailsRepository();
     airRepo = FakeAirQualityRepository();
     cubit = MapCubit(
       repository: mapRepo,
-      weatherRepository: weatherRepo,
+      detailsRepository: detailsRepo,
       airQualityRepository: airRepo,
     );
   });

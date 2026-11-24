@@ -19,7 +19,6 @@ import '../../features/details/presentation/cubits/details_cubit.dart';
 import '../infrastructure/datasources/local/local_storage.dart';
 import '../infrastructure/datasources/network/api/restful_request.dart';
 import '../infrastructure/services/location_service.dart';
-import '../infrastructure/services/model_download_service.dart';
 import '../infrastructure/services/edge_ai_inference_service.dart';
 
 final sl = GetIt.instance;
@@ -43,16 +42,8 @@ Future<void> setupGetIt() async {
 
   sl.registerLazySingleton<LocationService>(() => LocationService());
 
-  sl.registerLazySingleton<ModelDownloadService>(
-    () => ModelDownloadService(
-      localStorage: sl<LocalStorage>(),
-      client: sl<http.Client>(),
-    ),
-  );
-
   sl.registerLazySingleton<EdgeAiInferenceService>(
     () => EdgeAiInferenceService(
-      downloadService: sl<ModelDownloadService>(),
       bridge: BackendSseBridge(client: sl<http.Client>()),
     ),
   );
@@ -111,10 +102,6 @@ Future<void> setupGetIt() async {
 
   sl.registerFactory<AdvisorCubit>(() => AdvisorCubit());
   sl.registerFactory<AdvisorChatCubit>(
-    () => AdvisorChatCubit(
-      downloadService: sl<ModelDownloadService>(),
-      inferenceService: sl<EdgeAiInferenceService>(),
-      localStorage: sl<LocalStorage>(),
-    ),
+    () => AdvisorChatCubit(inferenceService: sl<EdgeAiInferenceService>()),
   );
 }

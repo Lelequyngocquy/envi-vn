@@ -9,19 +9,4 @@ abstract class IDetailsRepository {
   });
 
   DetailsEntity? getCachedDetails({double? latitude, double? longitude});
-
-  Future<BaseResult<DetailsEntity>> getWeatherForecast({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => getDetailsForecast(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
-
-  DetailsEntity? getCachedWeather({double? latitude, double? longitude}) =>
-      getCachedDetails(latitude: latitude, longitude: longitude);
 }
-
-typedef IWeatherRepository = IDetailsRepository;

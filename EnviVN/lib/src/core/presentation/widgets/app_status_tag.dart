@@ -191,6 +191,3 @@ class AppStatusTag extends StatelessWidget {
     );
   }
 }
-
-/// Bí danh rút gọn để gọi nhanh [AppStatusTag]
-typedef AppTag = AppStatusTag;

@@ -12,12 +12,7 @@ class LocalStorage {
   static const String _keyLastUpdate = 'last_update_timestamp';
   static const String _keyLocationPermission = 'location_permission_granted';
   static const String _keyCachedThermalHotspots = 'cached_nasa_firms_hotspots';
-  static const String _keyThermalLastUpdate =
-      'nasa_firms_last_update_timestamp';
-  static const String _keyAiModelDownloaded = 'ai_model_is_downloaded';
-  static const String _keyAiModelPath = 'ai_model_file_path';
-  static const String _keyAiModelSize = 'ai_model_byte_size';
-  static const String _keyAiModelDownloadedAt = 'ai_model_downloaded_at';
+  static const String _keyThermalLastUpdate = 'nasa_firms_last_update_timestamp';
 
   static const String _keyWeatherLruIndex = 'cached_weather_lru_keys';
   static const String _keyAqiLruIndex = 'cached_aqi_lru_keys';
@@ -200,44 +195,6 @@ class LocalStorage {
     final millis = prefs.getInt(_keyThermalLastUpdate);
     if (millis == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(millis);
-  }
-
-  Future<void> saveAiModelInfo({
-    required String path,
-    required int sizeBytes,
-  }) async {
-    await prefs.setBool(_keyAiModelDownloaded, true);
-    await prefs.setString(_keyAiModelPath, path);
-    await prefs.setInt(_keyAiModelSize, sizeBytes);
-    await prefs.setInt(
-      _keyAiModelDownloadedAt,
-      DateTime.now().millisecondsSinceEpoch,
-    );
-  }
-
-  bool isAiModelDownloaded() {
-    return prefs.getBool(_keyAiModelDownloaded) ?? false;
-  }
-
-  String? getAiModelPath() {
-    return prefs.getString(_keyAiModelPath);
-  }
-
-  int? getAiModelSize() {
-    return prefs.getInt(_keyAiModelSize);
-  }
-
-  DateTime? getAiModelDownloadedAt() {
-    final millis = prefs.getInt(_keyAiModelDownloadedAt);
-    if (millis == null) return null;
-    return DateTime.fromMillisecondsSinceEpoch(millis);
-  }
-
-  Future<void> clearAiModelInfo() async {
-    await prefs.remove(_keyAiModelDownloaded);
-    await prefs.remove(_keyAiModelPath);
-    await prefs.remove(_keyAiModelSize);
-    await prefs.remove(_keyAiModelDownloadedAt);
   }
 
   Future<void> clearAll() async {

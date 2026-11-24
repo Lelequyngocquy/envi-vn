@@ -5,6 +5,5 @@ export 'app_dialog.dart';
 export 'app_icon.dart';
 export 'app_status_tag.dart';
 export 'app_text.dart';
-export 'error_view.dart';
 export 'future_work_widget.dart';
 export 'loading.dart';

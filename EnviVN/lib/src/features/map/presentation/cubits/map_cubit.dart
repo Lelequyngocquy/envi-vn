@@ -27,15 +27,11 @@ class MapCubit extends Cubit<MapState> {
 
   MapCubit({
     required this.repository,
-    IDetailsRepository? detailsRepository,
-    IDetailsRepository? weatherRepository,
+    this.detailsRepository,
     this.airQualityRepository,
     this.locationService,
     this.nasaFirmsRepository,
-  }) : detailsRepository = detailsRepository ?? weatherRepository,
-       super(const MapState());
-
-  IDetailsRepository? get weatherRepository => detailsRepository;
+  }) : super(const MapState());
 
   Future<void> fetchVietnamStations({
     String? initialCity,

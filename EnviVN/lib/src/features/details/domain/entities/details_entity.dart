@@ -57,7 +57,3 @@ class DailyDetailsPoint {
     required this.precipitationSum,
   });
 }
-
-typedef WeatherEntity = DetailsEntity;
-typedef HourlyWeatherPoint = HourlyDetailsPoint;
-typedef DailyWeatherPoint = DailyDetailsPoint;

@@ -6,9 +6,6 @@ import '../../../../common/constants/colors.dart';
 import '../../../../common/utils/weather_code_helper.dart';
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/domain/entities/app_location_entity.dart';
-import '../../../../core/infrastructure/datasources/local/local_storage.dart';
-import '../../../../core/infrastructure/services/edge_ai_inference_service.dart';
-import '../../../../core/infrastructure/services/model_download_service.dart';
 import '../../../../core/presentation/widgets/app_bottom_sheet.dart';
 import '../../../../core/presentation/widgets/app_icon.dart';
 import '../../../../core/presentation/widgets/app_text.dart';
@@ -66,19 +63,11 @@ class AdvisorModalSheet extends StatelessWidget {
       maxHeightFactor: 0.92,
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => AdvisorCubit()),
+          BlocProvider(create: (_) => sl<AdvisorCubit>()),
           BlocProvider(
             create: (_) {
-              final cubit = AdvisorChatCubit(
-                downloadService: sl<ModelDownloadService>(),
-                inferenceService: sl<EdgeAiInferenceService>(),
-                localStorage: sl<LocalStorage>(),
-              );
-              cubit.initChat(
-                location: resolvedLocation,
-                weather: weather,
-                airQuality: airQuality,
-              );
+              final cubit = sl<AdvisorChatCubit>();
+              cubit.initChat(location: resolvedLocation);
               return cubit;
             },
           ),

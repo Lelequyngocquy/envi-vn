@@ -1,17 +1,13 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
 import 'package:envivn/src/core/domain/entities/base.dart';
 import 'package:envivn/src/core/infrastructure/configs/env_config.dart';
-import 'package:envivn/src/core/infrastructure/datasources/local/local_storage.dart';
 import 'package:envivn/src/core/infrastructure/services/edge_ai_inference_service.dart';
-import 'package:envivn/src/core/infrastructure/services/model_download_service.dart';
 import 'package:envivn/src/core/presentation/widgets/app_dialog.dart';
 import 'package:envivn/src/features/advisor/domain/entities/advisor_decision.dart';
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_chat_cubit.dart';
@@ -28,24 +24,15 @@ import 'package:envivn/src/features/map/domain/entities/vietnam_monitoring_stati
 import 'package:envivn/src/features/map/infrastructure/models/station_model.dart';
 import 'package:envivn/src/features/map/presentation/widgets/station_preview_card.dart';
 
-class _ControlledBridge implements IGemmaBridge {
+class _ControlledBridge implements IAiChatBridge {
   final StreamController<String> streamController = StreamController<String>.broadcast();
   bool shouldError = false;
 
   @override
-  Future<bool> isModelInstalled() async => true;
+  Future<void> startSession({double? lat, double? lon}) async {}
 
   @override
-  Future<void> setModelPath(String path) async {}
-
-  @override
-  Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
-
-  @override
-  Future<void> createChatSession({String? systemPrompt}) async {}
-
-  @override
-  Stream<String> generateResponseAsync(String message) {
+  Stream<String> generateResponseStream(String message) {
     if (shouldError) return Stream<String>.error(Exception('network down'));
     return streamController.stream;
   }
@@ -107,23 +94,15 @@ void main() {
     });
 
     test('AdvisorChatCubit clearChat cancels active stream without deadlocking sendMessage', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final storage = LocalStorage(prefs: prefs);
-      final tempDir = Directory.systemTemp.createTempSync('phase0_chat_test_');
-      final downloadService = ModelDownloadService(localStorage: storage, customDirectoryProvider: () async => tempDir);
-      final modelFile = await downloadService.getModelFile();
-      modelFile.writeAsBytesSync(List.filled(64, 1));
-      await downloadService.init();
       final bridge = _ControlledBridge();
-      final inference = EdgeAiInferenceService(downloadService: downloadService, bridge: bridge);
-      final cubit = AdvisorChatCubit(downloadService: downloadService, inferenceService: inference, localStorage: storage);
+      final inference = EdgeAiInferenceService(bridge: bridge);
+      final cubit = AdvisorChatCubit(inferenceService: inference);
       final loc = AppLocationEntity.defaultLocation;
-      await cubit.initChat(location: loc, weather: const DetailsEntity(), airQuality: const AirQualityEntity());
+      await cubit.initChat(location: loc);
       final pendingSend = cubit.sendMessage('Test câu 1');
       await pumpEventQueue();
       expect(cubit.state.isStreaming, isTrue);
-      cubit.clearChat(location: loc, weather: const DetailsEntity(), airQuality: const AirQualityEntity());
+      cubit.clearChat(location: loc);
       await pendingSend;
       await pumpEventQueue();
       expect(cubit.state.isStreaming, isFalse);
@@ -134,33 +113,16 @@ void main() {
       expect(cubit.state.messages.last.text, contains('Không thể kết nối'));
       await cubit.close();
       await inference.dispose();
-      downloadService.dispose();
-      if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
     });
 
     testWidgets('AdvisorModalSheet passes rain context to AdvisorCubit.selectPrompt', (tester) async {
-      late LocalStorage storage;
-      late Directory tempDir;
-      late ModelDownloadService downloadService;
-      late EdgeAiInferenceService inference;
-      late AdvisorChatCubit chatCubit;
-      late AdvisorCubit advisorCubit;
-      await tester.runAsync(() async {
-        SharedPreferences.setMockInitialValues({});
-        final prefs = await SharedPreferences.getInstance();
-        storage = LocalStorage(prefs: prefs);
-        tempDir = Directory.systemTemp.createTempSync('phase0_rain_test_');
-        downloadService = ModelDownloadService(localStorage: storage, customDirectoryProvider: () async => tempDir);
-        inference = EdgeAiInferenceService(downloadService: downloadService, bridge: _ControlledBridge());
-        chatCubit = AdvisorChatCubit(downloadService: downloadService, inferenceService: inference, localStorage: storage);
-        advisorCubit = AdvisorCubit();
-      });
+      final inference = EdgeAiInferenceService(bridge: _ControlledBridge());
+      final chatCubit = AdvisorChatCubit(inferenceService: inference);
+      final advisorCubit = AdvisorCubit();
       addTearDown(() async {
         await chatCubit.close();
         await advisorCubit.close();
         await inference.dispose();
-        downloadService.dispose();
-        if (tempDir.existsSync()) tempDir.deleteSync(recursive: true);
       });
       await tester.pumpWidget(
         MaterialApp(

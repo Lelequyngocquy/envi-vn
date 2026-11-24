@@ -134,6 +134,3 @@ class DetailsModel extends DetailsEntity {
     );
   }
 }
-
-// Backward-compatibility alias
-typedef WeatherModel = DetailsModel;

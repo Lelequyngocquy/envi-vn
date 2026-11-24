@@ -11,12 +11,6 @@ class DetailsHeroDetailCard extends StatelessWidget {
 
   const DetailsHeroDetailCard({super.key, required this.details});
 
-  // Backward compatible constructor
-  const DetailsHeroDetailCard.fromWeather({
-    super.key,
-    required DetailsEntity weather,
-  }) : details = weather;
-
   @override
   Widget build(BuildContext context) {
     final weather = details;
@@ -218,6 +212,3 @@ class _MetricItem extends StatelessWidget {
     );
   }
 }
-
-// Backward-compatibility alias
-typedef WeatherHeroDetailCard = DetailsHeroDetailCard;

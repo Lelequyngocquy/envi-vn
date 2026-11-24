@@ -107,21 +107,4 @@ class DetailsRepository implements IDetailsRepository {
     }
     return null;
   }
-
-  @override
-  Future<BaseResult<DetailsEntity>> getWeatherForecast({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => getDetailsForecast(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
-
-  @override
-  DetailsEntity? getCachedWeather({double? latitude, double? longitude}) =>
-      getCachedDetails(latitude: latitude, longitude: longitude);
 }
-
-typedef WeatherRepository = DetailsRepository;

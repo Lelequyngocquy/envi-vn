@@ -45,16 +45,4 @@ class DetailsCubit extends Cubit<DetailsState> {
     longitude: location.longitude,
     forceRefresh: forceRefresh,
   );
-
-  Future<void> fetchWeather({
-    required double latitude,
-    required double longitude,
-    bool forceRefresh = false,
-  }) => fetchDetails(
-    latitude: latitude,
-    longitude: longitude,
-    forceRefresh: forceRefresh,
-  );
 }
-
-typedef WeatherCubit = DetailsCubit;
