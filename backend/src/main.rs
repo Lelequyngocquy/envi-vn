@@ -43,7 +43,6 @@ pub struct HealthResponse {
 pub struct ChatRequest {
     pub message: Option<String>,
     pub messages: Option<Vec<ChatMessage>>,
-    pub system: Option<String>,
     pub lat: Option<f64>,
     pub lon: Option<f64>,
 }
@@ -160,16 +159,13 @@ async fn chat_advisor(
         return (StatusCode::BAD_REQUEST, "Message content is required").into_response();
     }
     let mut messages = Vec::new();
-    let system_prompt = match payload.system {
-        Some(sys) => format!("{}\n{}", sys, calculator::DOMAIN_GUARDRAIL_RULES),
-        None => if let (Some(lat), Some(lon)) = (payload.lat, payload.lon) {
-            match state.clients.get_environmental_summary(lat, lon, false).await {
-                Ok(summary) => summary.ai_system_prompt,
-                Err(_) => calculator::build_default_guardrail_prompt(),
-            }
-        } else {
-            calculator::build_default_guardrail_prompt()
-        },
+    let system_prompt = if let (Some(lat), Some(lon)) = (payload.lat, payload.lon) {
+        match state.clients.get_environmental_summary(lat, lon, false).await {
+            Ok(summary) => summary.ai_system_prompt,
+            Err(_) => calculator::build_default_guardrail_prompt(),
+        }
+    } else {
+        calculator::build_default_guardrail_prompt()
     };
     messages.push(ChatMessage { role: "system".into(), content: system_prompt });
     if let Some(history) = payload.messages {
@@ -255,7 +251,7 @@ async fn main() {
     let redis_port = std::env::var("REDIS_PORT").unwrap_or_else(|_| "6379".into());
     let ollama_base_url = std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".into());
     let ai_model_name = std::env::var("AI_MODEL_NAME").unwrap_or_else(|_| "qwen2.5:3b".into());
-    let nasa_api_key = std::env::var("NASA_FIRMS_API_KEY").unwrap_or_else(|_| "aaa04b831a37f75677607b924c5df1de".into());
+    let nasa_api_key = std::env::var("NASA_FIRMS_API_KEY").unwrap_or_default();
     let redis_client = if redis_host.is_empty() || redis_host.eq_ignore_ascii_case("disabled") || redis_host.eq_ignore_ascii_case("none") {
         None
     } else {

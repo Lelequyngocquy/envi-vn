@@ -136,13 +136,11 @@ class NasaFirmsRepository implements INasaFirmsRepository {
       return _fallbackToStaleCache(
         reason: 'Vệ tinh không ghi nhận điểm nhiệt mới trong 48h qua',
       );
-    } catch (e) {
+    } catch (_) {
       if (kDebugMode) {
-        debugPrint('[NasaFirmsRepository] Lỗi kết nối NASA: $e');
+        debugPrint('[NasaFirmsRepository] NASA FIRMS connection error');
       }
-      return _fallbackToStaleCache(
-        reason: 'Không thể kết nối máy chủ NASA ($e)',
-      );
+      return _fallbackToStaleCache(reason: 'Không thể kết nối máy chủ vệ tinh NASA FIRMS');
     }
   }
 
@@ -151,43 +149,22 @@ class NasaFirmsRepository implements INasaFirmsRepository {
     required String apiKey,
     required int dayRange,
   }) async {
-    final url = NasaFirmsPaths.areaCsv(
-      baseUrl: baseUrl,
-      apiKey: apiKey,
-      dayRange: dayRange,
-    );
-
-    final response = await _client
-        .get(Uri.parse(url))
-        .timeout(const Duration(seconds: 12));
-
-    if (response.statusCode == 429 || response.statusCode == 403) {
+    final url = NasaFirmsPaths.areaCsv(baseUrl: baseUrl, apiKey: apiKey, dayRange: dayRange);
+    final response = await _client.get(Uri.parse(url)).timeout(const Duration(seconds: 12));
+    if (response.statusCode == 429) {
       _lastRateLimitTime = DateTime.now();
-      return BaseResult(
-        success: false,
-        code: response.statusCode.toString(),
-        message:
-            'Đã chạm giới hạn hạn ngạch NASA (5000 lượt / 10 phút), đang hiển thị dữ liệu lưu đệm.',
-      );
+      return BaseResult(success: false, code: '429', message: 'Đã chạm giới hạn hạn ngạch NASA (5000 lượt / 10 phút), đang hiển thị dữ liệu lưu đệm.');
     }
-
+    if (response.statusCode == 403) {
+      return BaseResult(success: false, code: '403', message: 'Khóa xác thực NASA FIRMS không hợp lệ hoặc đã bị thu hồi.');
+    }
     if (response.statusCode != 200) {
-      return BaseResult(
-        success: false,
-        code: response.statusCode.toString(),
-        message: 'Lỗi HTTP ${response.statusCode}: ${response.body}',
-      );
+      return BaseResult(success: false, code: response.statusCode.toString(), message: 'Máy chủ NASA FIRMS phản hồi lỗi HTTP ${response.statusCode}.');
     }
-
     final csvText = response.body.trim();
     if (csvText.startsWith('Invalid') || csvText.isEmpty) {
-      return BaseResult(
-        success: false,
-        code: '400',
-        message: csvText.isEmpty ? 'Dữ liệu CSV trống' : csvText,
-      );
+      return BaseResult(success: false, code: '400', message: 'Dữ liệu điểm nhiệt vệ tinh không hợp lệ.');
     }
-
     final hotspots = ThermalHotspotModel.fromCsv(csvText);
     return BaseResult(data: hotspots);
   }
@@ -195,23 +172,16 @@ class NasaFirmsRepository implements INasaFirmsRepository {
   BaseResult<List<ThermalHotspotModel>> _fallbackToStaleCache({
     required String reason,
   }) {
-    _isServingCachedData = true;
     final cached = _loadFromStorage();
     if (cached.isNotEmpty) {
+      _isServingCachedData = true;
       final lastUpdate = storage.getThermalLastUpdateTime();
-      final timeStr = lastUpdate != null
-          ? 'lúc ${lastUpdate.hour.toString().padLeft(2, '0')}:${lastUpdate.minute.toString().padLeft(2, '0')}'
-          : '';
-      return BaseResult(
-        data: cached,
-        message: 'Đang hiển thị dữ liệu vệ tinh lưu đệm $timeStr ($reason)',
-      );
+      final timeStr = lastUpdate != null ? 'lúc ${lastUpdate.hour.toString().padLeft(2, '0')}:${lastUpdate.minute.toString().padLeft(2, '0')}' : '';
+      return BaseResult(data: cached, message: 'Đang hiển thị dữ liệu vệ tinh lưu đệm $timeStr ($reason)');
     }
-
-    return BaseResult(
-      data: ThermalHotspotModel.sampleHotspots,
-      message: 'Đang hiển thị danh mục điểm nhiệt thực địa ($reason)',
-    );
+    // Never return fabricated active fire hotspots when no real cache exists.
+    _isServingCachedData = false;
+    return BaseResult(success: false, data: const [], message: 'Chưa có dữ liệu điểm nhiệt vệ tinh ($reason)');
   }
 
   List<ThermalHotspotModel> _loadFromStorage() {

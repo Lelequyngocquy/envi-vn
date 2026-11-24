@@ -195,39 +195,25 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasRightButton =
-        rightButtonTitle != null && rightButtonTitle!.isNotEmpty;
-    final bool hasLeftButton =
-        showLeftButton &&
-        (leftButtonTitle != null || hasRightButton || !showButtons);
-
-    final String effectiveLeftTitle =
-        leftButtonTitle ?? (hasRightButton ? 'Hủy' : 'Đóng');
-    final VoidCallback effectiveLeftFunc =
-        leftButtonFunc ?? () => Navigator.of(context).maybePop();
-
+    final bool hasRightButton = rightButtonTitle != null && rightButtonTitle!.isNotEmpty;
+    final bool hasLeftButton = showButtons && showLeftButton;
+    final String effectiveLeftTitle = leftButtonTitle ?? (hasRightButton ? 'Hủy' : 'Đóng');
+    final VoidCallback effectiveLeftFunc = leftButtonFunc ?? () => Navigator.of(context).maybePop();
     return PopScope(
       canPop: canPop,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // 1. Chặn tương tác màn hình bên dưới & bắt sự kiện chạm ra ngoài
-          GestureDetector(
-            onTap: barrierDismissible
-                ? (onDismiss ?? () => Navigator.of(context).maybePop())
-                : null,
-            child: const ModalBarrier(
-              dismissible: false,
-              color: UIColors.transparent,
-            ),
-          ),
-
-          // 2. Lớp phủ làm mờ nền toàn màn hình (Frosted Dark Glass)
+          // Blurred dark backdrop rendered beneath hit-testable dismiss layer.
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-            child: Container(
-              color: barrierColor ?? UIColors.black.withOpacity(0.62),
-            ),
+            child: Container(color: barrierColor ?? UIColors.black.withOpacity(0.62)),
+          ),
+          // Dismissible barrier above backdrop so outside taps work properly.
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: barrierDismissible ? (onDismiss ?? () => Navigator.of(context).maybePop()) : null,
+            child: const SizedBox.expand(),
           ),
 
           // 3. Thẻ kính trung tâm (Floating Glass Dialog Card)

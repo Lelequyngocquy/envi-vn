@@ -136,7 +136,7 @@ impl ServiceClients {
         let url = format!(
             "https://firms.modaps.eosdis.nasa.gov/api/area/csv/{api_key}/VIIRS_NOAA20_NRT/102.14,8.18,109.46,23.39/1"
         );
-        let resp = self.http_client.get(&url).timeout(Duration::from_secs(12)).send().await.map_err(|e| e.to_string())?;
+        let resp = self.http_client.get(&url).timeout(Duration::from_secs(12)).send().await.map_err(|_| "NASA FIRMS upstream connection failed".to_string())?;
         let status = resp.status();
         if !status.is_success() {
             return Err(format!("NASA FIRMS upstream status: {status}"));

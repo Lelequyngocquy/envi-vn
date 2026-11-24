@@ -92,6 +92,24 @@ class _AiChatConversationViewState extends State<AiChatConversationView> {
         return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            if (state.errorMessage != null && state.errorMessage!.isNotEmpty)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: UIColors.error.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: UIColors.error.withOpacity(0.45)),
+                ),
+                child: Row(
+                  children: [
+                    const AppIcon(Icons.error_outline_rounded, size: 16, color: UIColors.error),
+                    const Gap(8),
+                    Expanded(child: AppText.regular(state.errorMessage!, size: 11.5, color: UIColors.textPrimary, maxLines: 3)),
+                  ],
+                ),
+              ),
             Flexible(
               child: ListView.builder(
                 controller: _scrollController,

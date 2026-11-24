@@ -24,18 +24,11 @@ class StationPreviewCard extends StatelessWidget {
   });
 
   bool get _isContentLoading {
-    if (isLoading) {
-      if (activeLayer == MapLayerType.airQuality &&
-          !station.id.startsWith('picked_')) {
-        return false;
-      }
-      return true;
+    if (!isLoading) return false;
+    if (activeLayer == MapLayerType.airQuality && !station.id.startsWith('picked_')) {
+      return false;
     }
-
-    if (station.id.startsWith('picked_') && station.temperature == null) {
-      return true;
-    }
-    return false;
+    return true;
   }
 
   @override

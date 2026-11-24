@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:envivn/src/common/constants/colors.dart';
@@ -51,52 +52,43 @@ class _StoryPreviewPageState extends State<StoryPreviewPage> {
 
   Future<void> _handleShare(String cityName) async {
     if (_isSharing) return;
-
-    final ratio = MediaQuery.of(context).devicePixelRatio.clamp(1.5, 2.2);
-
+    final ratio = MediaQuery.devicePixelRatioOf(context).clamp(1.5, 2.2);
+    final renderBox = context.findRenderObject() as RenderBox?;
+    final shareOrigin = renderBox != null ? (renderBox.localToGlobal(Offset.zero) & renderBox.size) : null;
     setState(() {
       _isSharing = true;
       _selectedCardIndex = null;
     });
-
-    await Future.delayed(const Duration(milliseconds: 60));
-
+    File? tempFile;
     try {
-      final boundary =
-          _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return;
+      final boundary = _cardKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
       if (boundary == null) {
-        throw Exception('Không tìm thấy vùng hiển thị thẻ ảnh');
+        throw StateError('Missing repaint boundary');
       }
-
       final image = await boundary.toImage(pixelRatio: ratio);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) {
-        throw Exception('Không thể chuyển đổi dữ liệu ảnh');
+      final ByteData? byteData;
+      try {
+        byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      } finally {
+        image.dispose();
       }
-
+      if (!mounted) return;
+      if (byteData == null) {
+        throw StateError('Failed to encode story PNG');
+      }
       final pngBytes = byteData.buffer.asUint8List();
-
       final tempDir = await getTemporaryDirectory();
-      final timestamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${tempDir.path}/envivn_story_$timestamp.png');
-      await file.writeAsBytes(pngBytes);
-
-      await Share.shareXFiles(
-        [XFile(file.path, mimeType: 'image/png')],
-        text: 'Chất lượng không khí tại $cityName hôm nay • Ứng dụng EnviVN',
-        subject: 'EnviVN - $cityName',
-      );
-    } catch (e) {
+      tempFile = File('${tempDir.path}/envivn_story_latest.png');
+      await tempFile.writeAsBytes(pngBytes, flush: true);
+      await Share.shareXFiles([XFile(tempFile.path, mimeType: 'image/png')], text: 'Chất lượng không khí tại $cityName hôm nay • Ứng dụng EnviVN', subject: 'EnviVN - $cityName', sharePositionOrigin: shareOrigin);
+    } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             backgroundColor: UIColors.error,
-            content: AppText.semiBold(
-              'Không thể chia sẻ ảnh: $e',
-              size: 13,
-              color: UIColors.white,
-              maxLines: 3,
-            ),
+            content: AppText.semiBold('Không thể tạo hoặc chia sẻ ảnh lúc này. Vui lòng thử lại.', size: 13, color: UIColors.white, maxLines: 3),
           ),
         );
       }

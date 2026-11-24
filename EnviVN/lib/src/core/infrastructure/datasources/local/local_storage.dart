@@ -19,11 +19,24 @@ class LocalStorage {
   static const String _keyAiModelSize = 'ai_model_byte_size';
   static const String _keyAiModelDownloadedAt = 'ai_model_downloaded_at';
 
-  static String _weatherKey(double lat, double lon) =>
-      'cached_weather_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+  static const String _keyWeatherLruIndex = 'cached_weather_lru_keys';
+  static const String _keyAqiLruIndex = 'cached_aqi_lru_keys';
+  static const int maxCachedLocations = 12;
 
-  static String _aqiKey(double lat, double lon) =>
-      'cached_aqi_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+  static String _weatherKey(double lat, double lon) => 'cached_weather_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+
+  static String _aqiKey(double lat, double lon) => 'cached_aqi_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+
+  Future<void> _trackLruKey(String indexKey, String cacheKey) async {
+    final keys = List<String>.from(prefs.getStringList(indexKey) ?? const []);
+    keys.remove(cacheKey);
+    keys.add(cacheKey);
+    while (keys.length > maxCachedLocations) {
+      final oldest = keys.removeAt(0);
+      await prefs.remove(oldest);
+    }
+    await prefs.setStringList(indexKey, keys);
+  }
 
   Future<void> saveCachedWeather(
     Map<String, dynamic> data, {
@@ -31,15 +44,13 @@ class LocalStorage {
     double? lon,
     Duration ttl = const Duration(minutes: 30),
   }) async {
-    final entry = {
-      'cachedAt': DateTime.now().millisecondsSinceEpoch,
-      'ttlMillis': ttl.inMilliseconds,
-      'data': data,
-    };
+    final entry = {'cachedAt': DateTime.now().millisecondsSinceEpoch, 'ttlMillis': ttl.inMilliseconds, 'data': data};
     final encoded = jsonEncode(entry);
     await prefs.setString(_keyCachedWeather, encoded);
     if (lat != null && lon != null) {
-      await prefs.setString(_weatherKey(lat, lon), encoded);
+      final key = _weatherKey(lat, lon);
+      await prefs.setString(key, encoded);
+      await _trackLruKey(_keyWeatherLruIndex, key);
     }
     await saveLastUpdateTime();
   }
@@ -49,10 +60,10 @@ class LocalStorage {
     double? lon,
     bool checkTtl = false,
   }) {
-    final key = (lat != null && lon != null)
-        ? _weatherKey(lat, lon)
-        : _keyCachedWeather;
-    final raw = prefs.getString(key) ?? prefs.getString(_keyCachedWeather);
+    final hasCoords = lat != null && lon != null;
+    final key = hasCoords ? _weatherKey(lat, lon) : _keyCachedWeather;
+    // Never fall back to global cache when specific coordinates are requested.
+    final raw = prefs.getString(key);
     if (raw == null) return null;
     try {
       final decoded = jsonDecode(raw);
@@ -62,9 +73,7 @@ class LocalStorage {
             final cachedAt = decoded['cachedAt'] as int? ?? 0;
             final ttlMillis = decoded['ttlMillis'] as int? ?? (30 * 60 * 1000);
             final now = DateTime.now().millisecondsSinceEpoch;
-            if (now - cachedAt > ttlMillis) {
-              return null;
-            }
+            if (now - cachedAt > ttlMillis) return null;
           }
           return decoded['data'] as Map<String, dynamic>?;
         }
@@ -86,15 +95,13 @@ class LocalStorage {
     double? lon,
     Duration ttl = const Duration(minutes: 30),
   }) async {
-    final entry = {
-      'cachedAt': DateTime.now().millisecondsSinceEpoch,
-      'ttlMillis': ttl.inMilliseconds,
-      'data': data,
-    };
+    final entry = {'cachedAt': DateTime.now().millisecondsSinceEpoch, 'ttlMillis': ttl.inMilliseconds, 'data': data};
     final encoded = jsonEncode(entry);
     await prefs.setString(_keyCachedAQI, encoded);
     if (lat != null && lon != null) {
-      await prefs.setString(_aqiKey(lat, lon), encoded);
+      final key = _aqiKey(lat, lon);
+      await prefs.setString(key, encoded);
+      await _trackLruKey(_keyAqiLruIndex, key);
     }
     await saveLastUpdateTime();
   }
@@ -104,10 +111,10 @@ class LocalStorage {
     double? lon,
     bool checkTtl = false,
   }) {
-    final key = (lat != null && lon != null)
-        ? _aqiKey(lat, lon)
-        : _keyCachedAQI;
-    final raw = prefs.getString(key) ?? prefs.getString(_keyCachedAQI);
+    final hasCoords = lat != null && lon != null;
+    final key = hasCoords ? _aqiKey(lat, lon) : _keyCachedAQI;
+    // Never fall back to global cache when specific coordinates are requested.
+    final raw = prefs.getString(key);
     if (raw == null) return null;
     try {
       final decoded = jsonDecode(raw);
@@ -117,9 +124,7 @@ class LocalStorage {
             final cachedAt = decoded['cachedAt'] as int? ?? 0;
             final ttlMillis = decoded['ttlMillis'] as int? ?? (30 * 60 * 1000);
             final now = DateTime.now().millisecondsSinceEpoch;
-            if (now - cachedAt > ttlMillis) {
-              return null;
-            }
+            if (now - cachedAt > ttlMillis) return null;
           }
           return decoded['data'] as Map<String, dynamic>?;
         }

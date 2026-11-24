@@ -18,11 +18,13 @@ abstract class IGemmaBridge {
 
 class BackendSseBridge implements IGemmaBridge {
   final http.Client _client;
-  String? _systemPrompt;
+  final bool _ownsClient;
   double? latitude;
   double? longitude;
 
-  BackendSseBridge({http.Client? client}) : _client = client ?? http.Client();
+  BackendSseBridge({http.Client? client})
+      : _client = client ?? http.Client(),
+        _ownsClient = client == null;
 
   @override
   Future<bool> isModelInstalled() async => true;
@@ -34,23 +36,22 @@ class BackendSseBridge implements IGemmaBridge {
   Future<void> createModel({required bool isInstructionTuned, int maxTokens = 2048}) async {}
 
   @override
-  Future<void> createChatSession({String? systemPrompt}) async {
-    _systemPrompt = systemPrompt;
-  }
+  Future<void> createChatSession({String? systemPrompt}) async {}
 
   @override
   Stream<String> generateResponseAsync(String message) async* {
     final uri = Uri.parse('${EnvConfig.backendBaseUrl}/api/v1/advisor/chat');
     final request = http.Request('POST', uri);
     request.headers['Content-Type'] = 'application/json';
+    // Never send client-controlled system prompts to backend.
     request.body = jsonEncode({
       'message': message,
-      if (_systemPrompt != null) 'system': _systemPrompt,
       if (latitude != null) 'lat': latitude,
       if (longitude != null) 'lon': longitude,
     });
-    final response = await _client.send(request);
+    final response = await _client.send(request).timeout(const Duration(seconds: 120));
     if (response.statusCode != 200) {
+      await response.stream.drain<void>();
       throw HttpException('Backend returned status ${response.statusCode}');
     }
     await for (final line in response.stream.toStringStream().transform(const LineSplitter())) {
@@ -59,7 +60,7 @@ class BackendSseBridge implements IGemmaBridge {
         if (data == '[DONE]') break;
         try {
           final decoded = jsonDecode(data);
-          if (decoded is Map && decoded['content'] != null) {
+          if (decoded is Map && decoded['content'] is String) {
             final content = decoded['content'] as String;
             if (content.isNotEmpty) yield content;
           }
@@ -79,7 +80,7 @@ class BackendSseBridge implements IGemmaBridge {
 
   @override
   Future<void> close() async {
-    _systemPrompt = null;
+    if (_ownsClient) _client.close();
   }
 }
 

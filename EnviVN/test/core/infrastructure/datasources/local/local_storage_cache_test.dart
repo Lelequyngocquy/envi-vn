@@ -105,10 +105,28 @@ void main() {
     test('backwards compatibility without lat lon parameters', () async {
       final data = {'default': true};
       await storage.saveCachedWeather(data);
-
       final retrieved = storage.getCachedWeather();
       expect(retrieved, isNotNull);
       expect(retrieved?['default'], true);
+    });
+
+    test('never returns another city cache when requested coordinates are uncached', () async {
+      await storage.saveCachedWeather({'city': 'Hà Nội'}, lat: 21.03, lon: 105.85);
+      await storage.saveCachedAirQuality({'us_aqi': 120}, lat: 21.03, lon: 105.85);
+      expect(storage.getCachedWeather(lat: 16.05, lon: 108.20, checkTtl: true), isNull);
+      expect(storage.getCachedWeather(lat: 16.05, lon: 108.20, checkTtl: false), isNull);
+      expect(storage.getCachedAirQuality(lat: 16.05, lon: 108.20, checkTtl: true), isNull);
+      expect(storage.getCachedAirQuality(lat: 16.05, lon: 108.20, checkTtl: false), isNull);
+    });
+
+    test('evicts oldest coordinate caches when exceeding LRU capacity', () async {
+      for (int i = 0; i < LocalStorage.maxCachedLocations + 2; i++) {
+        await storage.saveCachedWeather({'idx': i}, lat: 10.0 + i, lon: 105.0);
+      }
+      expect(storage.getCachedWeather(lat: 10.0, lon: 105.0), isNull);
+      expect(storage.getCachedWeather(lat: 11.0, lon: 105.0), isNull);
+      expect(storage.getCachedWeather(lat: 12.0, lon: 105.0)?['idx'], 2);
+      expect(storage.getCachedWeather(lat: 10.0 + LocalStorage.maxCachedLocations + 1, lon: 105.0)?['idx'], LocalStorage.maxCachedLocations + 1);
     });
   });
 }

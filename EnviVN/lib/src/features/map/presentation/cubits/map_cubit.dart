@@ -22,6 +22,8 @@ class MapCubit extends Cubit<MapState> {
   final IAirQualityRepository? airQualityRepository;
   final LocationService? locationService;
   final INasaFirmsRepository? nasaFirmsRepository;
+  int _weatherSeq = 0;
+  int _pickSeq = 0;
 
   MapCubit({
     required this.repository,
@@ -39,37 +41,22 @@ class MapCubit extends Cubit<MapState> {
     String? initialCity,
     LatLng? initialCoords,
   }) async {
-    emit(state.copyWith(status: MapStatus.loading, errorMessage: null));
-
+    emit(state.copyWith(status: MapStatus.loading, clearErrorMessage: true));
     final result = await repository.getVietnamStations();
-
+    if (isClosed) return;
     if (result.isSuccess && result.data != null) {
       final stations = result.data!;
-      emit(state.copyWith(status: MapStatus.success, stations: stations));
-
+      emit(state.copyWith(status: MapStatus.success, stations: stations, clearErrorMessage: true));
       await loadUserGpsLocation();
-
-      if (state.selectedStation != null || state.targetLocation != null) {
-        return;
-      }
-
+      if (isClosed) return;
+      if (state.selectedStation != null || state.targetLocation != null) return;
       if (initialCoords != null) {
-        selectLocationCoordinates(
-          initialCoords.latitude,
-          initialCoords.longitude,
-          label: initialCity,
-        );
+        selectLocationCoordinates(initialCoords.latitude, initialCoords.longitude, label: initialCity);
       } else if (initialCity != null && initialCity.isNotEmpty) {
         selectLocationByCityName(initialCity);
       }
     } else {
-      emit(
-        state.copyWith(
-          status: MapStatus.failure,
-          errorMessage:
-              result.message ?? 'Không thể tải trạm quan trắc trên bản đồ',
-        ),
-      );
+      emit(state.copyWith(status: MapStatus.failure, errorMessage: result.message ?? 'Không thể tải trạm quan trắc trên bản đồ'));
     }
   }
 
@@ -89,11 +76,12 @@ class MapCubit extends Cubit<MapState> {
 
   Future<void> loadUserGpsLocation({LatLng? fallbackCoords}) async {
     if (locationService == null) {
-      emit(state.copyWith(clearUserGpsLocation: true));
+      if (!isClosed) emit(state.copyWith(clearUserGpsLocation: true));
       return;
     }
     try {
       final isGranted = await locationService!.checkPermissionGranted();
+      if (isClosed) return;
       if (!isGranted) {
         emit(state.copyWith(clearUserGpsLocation: true));
         return;
@@ -102,15 +90,14 @@ class MapCubit extends Cubit<MapState> {
         emit(state.copyWith(userGpsLocation: fallbackCoords));
       }
       final loc = await locationService!.getCurrentLocation();
+      if (isClosed) return;
       if (!loc.isDefault && !loc.isPermissionDenied) {
-        emit(
-          state.copyWith(userGpsLocation: LatLng(loc.latitude, loc.longitude)),
-        );
+        emit(state.copyWith(userGpsLocation: LatLng(loc.latitude, loc.longitude)));
       } else {
         emit(state.copyWith(clearUserGpsLocation: true));
       }
     } catch (_) {
-      emit(state.copyWith(clearUserGpsLocation: true));
+      if (!isClosed) emit(state.copyWith(clearUserGpsLocation: true));
     }
   }
 
@@ -181,73 +168,43 @@ class MapCubit extends Cubit<MapState> {
   }
 
   Future<void> fetchThermalHotspots({bool forceRefresh = false}) async {
-    if (nasaFirmsRepository == null) return;
+    if (nasaFirmsRepository == null || isClosed) return;
     emit(state.copyWith(isLoadingThermal: true));
     try {
-      final result = await nasaFirmsRepository!.getVietnamActiveFires(
-        forceRefresh: forceRefresh,
-      );
+      final result = await nasaFirmsRepository!.getVietnamActiveFires(forceRefresh: forceRefresh);
+      if (isClosed) return;
       if (result.isSuccess && result.data != null) {
-        emit(
-          state.copyWith(
-            thermalHotspots: result.data!,
-            isLoadingThermal: false,
-            thermalNotice: result.message,
-            isThermalFromCache: nasaFirmsRepository!.isServingCachedData,
-          ),
-        );
+        emit(state.copyWith(thermalHotspots: result.data!, isLoadingThermal: false, thermalNotice: result.message, isThermalFromCache: nasaFirmsRepository!.isServingCachedData));
       } else {
-        emit(
-          state.copyWith(
-            isLoadingThermal: false,
-            thermalNotice: result.message,
-            isThermalFromCache: true,
-          ),
-        );
+        emit(state.copyWith(thermalHotspots: result.data ?? const [], isLoadingThermal: false, thermalNotice: result.message, isThermalFromCache: false));
       }
     } catch (_) {
-      emit(state.copyWith(isLoadingThermal: false, isThermalFromCache: true));
+      if (isClosed) return;
+      emit(state.copyWith(isLoadingThermal: false, thermalNotice: 'Không thể tải dữ liệu điểm nhiệt vệ tinh lúc này.', isThermalFromCache: false));
     }
   }
 
   Future<void> _enrichStationWeather(StationEntity station) async {
-    if (weatherRepository == null) {
-      if (state.isLoadingPointData) {
+    final seq = ++_weatherSeq;
+    if (detailsRepository == null) {
+      if (!isClosed && state.isLoadingPointData) {
         emit(state.copyWith(isLoadingPointData: false));
       }
       return;
     }
     try {
-      final res = await detailsRepository!.getDetailsForecast(
-        latitude: station.latitude,
-        longitude: station.longitude,
-      );
-      if (res.isSuccess &&
-          res.data != null &&
-          state.selectedStation?.id == station.id) {
+      final res = await detailsRepository!.getDetailsForecast(latitude: station.latitude, longitude: station.longitude);
+      if (isClosed || seq != _weatherSeq) return;
+      if (res.isSuccess && res.data != null && state.selectedStation?.id == station.id) {
         final weather = res.data!;
-        final updatedStation = station.copyWith(
-          temperature: weather.currentTemp,
-          apparentTemp: weather.apparentTemp,
-          weatherCode: weather.weatherCode,
-          humidity: weather.relativeHumidity,
-          windSpeed: weather.windSpeed,
-          precipitation: weather.precipitation,
-          uvIndex: weather.uvIndex,
-        );
-        emit(
-          state.copyWith(
-            selectedStation: updatedStation,
-            isLoadingPointData: false,
-          ),
-        );
-      } else {
-        if (state.isLoadingPointData) {
-          emit(state.copyWith(isLoadingPointData: false));
-        }
+        final updatedStation = station.copyWith(temperature: weather.currentTemp, apparentTemp: weather.apparentTemp, weatherCode: weather.weatherCode, humidity: weather.relativeHumidity, windSpeed: weather.windSpeed, precipitation: weather.precipitation, uvIndex: weather.uvIndex);
+        emit(state.copyWith(selectedStation: updatedStation, isLoadingPointData: false));
+      } else if (state.selectedStation?.id == station.id && state.isLoadingPointData) {
+        emit(state.copyWith(isLoadingPointData: false));
       }
     } catch (_) {
-      if (state.isLoadingPointData) {
+      if (isClosed || seq != _weatherSeq) return;
+      if (state.selectedStation?.id == station.id && state.isLoadingPointData) {
         emit(state.copyWith(isLoadingPointData: false));
       }
     }
@@ -316,18 +273,7 @@ class MapCubit extends Cubit<MapState> {
         _enrichStationWeather(closestStation);
       }
     } else {
-      emit(
-        state.copyWith(
-          clearSelectedStation: true,
-          targetLocation: LatLng(lat, lon),
-          targetZoom: zoom,
-          selectedCityName: label ?? 'Vị trí hiện tại',
-          isHomeSelected: true,
-          clearSelectedQuickCity: true,
-          clearPickedLocation: true,
-          isLoadingPointData: false,
-        ),
-      );
+      emit(state.copyWith(clearSelectedStation: true, targetLocation: LatLng(lat, lon), targetZoom: zoom, selectedCityName: label ?? 'Vị trí hiện tại', isHomeSelected: true, clearSelectedQuickCity: true, clearPickedLocation: true, isLoadingPointData: false, isShowedAllVN: false));
     }
   }
 
@@ -368,19 +314,7 @@ class MapCubit extends Cubit<MapState> {
     if (closestStation != null && minDistance <= 35.0) {
       selectStation(closestStation, quickCity: matchedQuickCity);
     } else {
-      emit(
-        state.copyWith(
-          clearSelectedStation: true,
-          targetLocation: LatLng(lat, lon),
-          targetZoom: zoom,
-          selectedCityName: label,
-          selectedQuickCity: matchedQuickCity,
-          clearSelectedQuickCity: matchedQuickCity == null,
-          isHomeSelected: false,
-          clearPickedLocation: true,
-          isLoadingPointData: false,
-        ),
-      );
+      emit(state.copyWith(clearSelectedStation: true, targetLocation: LatLng(lat, lon), targetZoom: zoom, selectedCityName: label, selectedQuickCity: matchedQuickCity, clearSelectedQuickCity: matchedQuickCity == null, isHomeSelected: false, clearPickedLocation: true, isLoadingPointData: false, isShowedAllVN: false));
     }
   }
 
@@ -490,47 +424,26 @@ class MapCubit extends Cubit<MapState> {
       updatedAt: DateTime.now(),
     );
 
-    emit(
-      state.copyWith(
-        pickedLocation: point,
-        pickedReferenceLocation: referenceCoords,
-        pickedDistanceKm: minDistance.isFinite ? minDistance : null,
-        isPickingLocation: true,
-        isLoadingPointData: true,
-        selectedStation: placeholderStation,
-        targetLocation: point,
-        targetZoom: zoom,
-        isHomeSelected: false,
-        clearSelectedCityName: true,
-        clearSelectedQuickCity: true,
-      ),
-    );
-
+    final seq = ++_pickSeq;
+    emit(state.copyWith(pickedLocation: point, pickedReferenceLocation: referenceCoords, pickedDistanceKm: minDistance.isFinite ? minDistance : null, isPickingLocation: true, isLoadingPointData: true, selectedStation: placeholderStation, targetLocation: point, targetZoom: zoom, isHomeSelected: false, isShowedAllVN: false, clearSelectedCityName: true, clearSelectedQuickCity: true));
     try {
-      final airFuture = airQualityRepository?.getAirQuality(
-        latitude: point.latitude,
-        longitude: point.longitude,
-      );
-      final weatherFuture = detailsRepository?.getDetailsForecast(
-        latitude: point.latitude,
-        longitude: point.longitude,
-      );
-
-      final airRes = airFuture != null ? await airFuture : null;
-      final weatherRes = weatherFuture != null ? await weatherFuture : null;
-
+      final results = await Future.wait<dynamic>([
+        if (airQualityRepository != null) airQualityRepository!.getAirQuality(latitude: point.latitude, longitude: point.longitude) else Future<dynamic>.value(null),
+        if (detailsRepository != null) detailsRepository!.getDetailsForecast(latitude: point.latitude, longitude: point.longitude) else Future<dynamic>.value(null),
+      ]);
+      if (isClosed || seq != _pickSeq) return;
+      final airRes = results[0];
+      final weatherRes = results[1];
       if (state.pickedLocation == point) {
         int aqi = 0;
         double pm25 = 0.0;
         double pm10 = 0.0;
-
         if (airRes != null && airRes.isSuccess && airRes.data != null) {
           final AirQualityEntity airData = airRes.data!;
           aqi = airData.usAqi;
           pm25 = airData.pm25;
           pm10 = airData.pm10;
         }
-
         double? temp;
         double? apparentTemp;
         int? weatherCode;
@@ -538,10 +451,7 @@ class MapCubit extends Cubit<MapState> {
         double? windSpeed;
         double? precipitation;
         double? uvIndex;
-
-        if (weatherRes != null &&
-            weatherRes.isSuccess &&
-            weatherRes.data != null) {
+        if (weatherRes != null && weatherRes.isSuccess && weatherRes.data != null) {
           final DetailsEntity weatherData = weatherRes.data!;
           temp = weatherData.currentTemp;
           apparentTemp = weatherData.apparentTemp;
@@ -551,42 +461,13 @@ class MapCubit extends Cubit<MapState> {
           precipitation = weatherData.precipitation;
           uvIndex = weatherData.uvIndex;
         }
-
-        final enrichedStation = placeholderStation.copyWith(
-          aqi: aqi,
-          pm25: pm25,
-          pm10: pm10,
-          temperature: temp,
-          apparentTemp: apparentTemp,
-          weatherCode: weatherCode,
-          humidity: humidity,
-          windSpeed: windSpeed,
-          precipitation: precipitation,
-          uvIndex: uvIndex,
-        );
-
-        emit(
-          state.copyWith(
-            selectedStation: enrichedStation,
-            isPickingLocation: false,
-            isLoadingPointData: false,
-            clearSelectedCityName: true,
-            clearSelectedQuickCity: true,
-            isHomeSelected: false,
-          ),
-        );
+        final enrichedStation = placeholderStation.copyWith(aqi: aqi, pm25: pm25, pm10: pm10, temperature: temp, apparentTemp: apparentTemp, weatherCode: weatherCode, humidity: humidity, windSpeed: windSpeed, precipitation: precipitation, uvIndex: uvIndex);
+        emit(state.copyWith(selectedStation: enrichedStation, isPickingLocation: false, isLoadingPointData: false, clearSelectedCityName: true, clearSelectedQuickCity: true, isHomeSelected: false));
       }
     } catch (_) {
+      if (isClosed || seq != _pickSeq) return;
       if (state.pickedLocation == point) {
-        emit(
-          state.copyWith(
-            isPickingLocation: false,
-            isLoadingPointData: false,
-            clearSelectedCityName: true,
-            clearSelectedQuickCity: true,
-            isHomeSelected: false,
-          ),
-        );
+        emit(state.copyWith(isPickingLocation: false, isLoadingPointData: false, clearSelectedCityName: true, clearSelectedQuickCity: true, isHomeSelected: false));
       }
     }
   }

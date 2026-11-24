@@ -18,7 +18,9 @@ class AppTopToast {
     Duration duration = const Duration(seconds: 3),
   }) {
     _timer?.cancel();
-    _currentEntry?.remove();
+    if (_currentEntry?.mounted ?? false) {
+      _currentEntry!.remove();
+    }
     _currentEntry = null;
 
     final overlay = Overlay.maybeOf(context, rootOverlay: true);
@@ -75,6 +77,7 @@ class _TopToastOverlayWidgetState extends State<_TopToastOverlayWidget>
   late final AnimationController _controller;
   late final Animation<Offset> _offsetAnimation;
   late final Animation<double> _fadeAnimation;
+  bool _isDismissing = false;
 
   @override
   void initState() {
@@ -97,9 +100,13 @@ class _TopToastOverlayWidgetState extends State<_TopToastOverlayWidget>
     _controller.forward();
   }
 
-  void _dismiss() async {
-    await _controller.reverse();
-    widget.onDismiss();
+  Future<void> _dismiss() async {
+    if (_isDismissing || !mounted) return;
+    _isDismissing = true;
+    try {
+      await _controller.reverse();
+    } catch (_) {}
+    if (mounted) widget.onDismiss();
   }
 
   @override

@@ -136,8 +136,8 @@ class _CitySelectorSheetState extends State<CitySelectorSheet> {
 
                 return ListTile(
                   onTap: () {
-                    widget.onCitySelected(city);
                     Navigator.pop(context);
+                    widget.onCitySelected(city);
                   },
                   title: AppText(
                     city.name,

@@ -163,9 +163,10 @@ class _MapPageState extends State<MapPage> {
     _safeMove(LatLng(city.latitude, city.longitude), 12.0);
   }
 
-  void _moveToCurrentGpsLocation() async {
+  Future<void> _moveToCurrentGpsLocation() async {
     final homeCubit = context.read<HomeDashboardCubit>();
     await homeCubit.detectGpsLocation();
+    if (!mounted) return;
     final updatedCity = homeCubit.state.currentCity;
     _syncWithHomeCity(updatedCity);
   }

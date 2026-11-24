@@ -6,17 +6,12 @@ import 'details_state.dart';
 
 class DetailsCubit extends Cubit<DetailsState> {
   final IDetailsRepository repository;
+  int _requestSeq = 0;
 
   DetailsCubit({required this.repository}) : super(const DetailsState()) {
     final cached = repository.getCachedDetails();
     if (cached != null) {
-      emit(
-        state.copyWith(
-          status: DetailsStatus.success,
-          details: cached,
-          noticeMessage: 'Dữ liệu đã lưu ngoại tuyến',
-        ),
-      );
+      emit(state.copyWith(status: DetailsStatus.success, details: cached, noticeMessage: 'Dữ liệu đã lưu ngoại tuyến'));
     }
   }
 
@@ -31,29 +26,14 @@ class DetailsCubit extends Cubit<DetailsState> {
     required double longitude,
     bool forceRefresh = false,
   }) async {
-    emit(state.copyWith(status: DetailsStatus.loading, errorMessage: null));
-
-    final result = await repository.getDetailsForecast(
-      latitude: latitude,
-      longitude: longitude,
-      forceRefresh: forceRefresh,
-    );
-
+    final seq = ++_requestSeq;
+    emit(state.copyWith(status: DetailsStatus.loading, clearError: true));
+    final result = await repository.getDetailsForecast(latitude: latitude, longitude: longitude, forceRefresh: forceRefresh);
+    if (isClosed || seq != _requestSeq) return;
     if (result.isSuccess && result.data != null) {
-      emit(
-        state.copyWith(
-          status: DetailsStatus.success,
-          details: result.data,
-          noticeMessage: result.message,
-        ),
-      );
+      emit(state.copyWith(status: DetailsStatus.success, details: result.data, noticeMessage: result.message, clearNotice: result.message == null, clearError: true));
     } else {
-      emit(
-        state.copyWith(
-          status: DetailsStatus.failure,
-          errorMessage: result.message ?? 'Không thể tải dữ liệu chi tiết',
-        ),
-      );
+      emit(state.copyWith(status: DetailsStatus.failure, errorMessage: result.message ?? 'Không thể tải dữ liệu chi tiết'));
     }
   }
 

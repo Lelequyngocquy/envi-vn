@@ -18,10 +18,10 @@ class LocationPermissionPage extends StatelessWidget {
   void _navigateToHome(BuildContext context) {
     if (isSettings) {
       context.read<HomeDashboardCubit>().setTab(0);
-    } else if (Navigator.canPop(context)) {
-      Navigator.pop(context);
+    } else if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     } else {
-      Navigator.pushReplacementNamed(context, RouterPath.home);
+      Navigator.of(context).pushReplacementNamed(RouterPath.home);
     }
   }
 

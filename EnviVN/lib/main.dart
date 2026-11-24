@@ -40,13 +40,34 @@ void main() async {
     debugPrint('[main] initializeDateFormatting error: $e\n$stack');
   }
 
+  bool diReady = true;
   try {
     await di.setupGetIt();
   } catch (e, stack) {
+    diReady = false;
     debugPrint('[main] di.setupGetIt error: $e\n$stack');
   }
+  runApp(diReady ? const EnviVNApp() : const _StartupErrorApp());
+}
 
-  runApp(const EnviVNApp());
+class _StartupErrorApp extends StatelessWidget {
+  const _StartupErrorApp();
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        backgroundColor: UIColors.bg,
+        body: Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: AppText.semiBold('Không thể khởi tạo ứng dụng EnviVN. Vui lòng khởi động lại.', textAlign: TextAlign.center, color: UIColors.textPrimary, size: 15),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class EnviVNApp extends StatelessWidget {
@@ -98,31 +119,24 @@ class EnviVNApp extends StatelessWidget {
         onGenerateRoute: (settings) {
           switch (settings.name) {
             case RouterPath.splash:
-              return FadeRoute(page: const SplashPage());
-
+              return FadeRoute(page: const SplashPage(), settings: settings);
             case RouterPath.permission:
-              return FadeRoute(page: const LocationPermissionPage());
-
+              return FadeRoute(page: const LocationPermissionPage(), settings: settings);
             case RouterPath.home:
-              return FadeRoute(page: const HomePage());
-
+              return FadeRoute(page: const HomePage(), settings: settings);
             case RouterPath.map:
-              return FadeRoute(page: const HomePage(initialTab: 1));
-
+              return FadeRoute(page: const HomePage(initialTab: 1), settings: settings);
             case RouterPath.twentyFourHours:
-              return FadeRoute(page: const TwentyFourHourDetailPage());
-
+              return FadeRoute(page: const TwentyFourHourDetailPage(), settings: settings);
             case RouterPath.storyShare:
-              return FadeRoute(page: const StoryPreviewPage());
-
+              return FadeRoute(page: const StoryPreviewPage(), settings: settings);
             default:
               return MaterialPageRoute(
+                settings: settings,
                 builder: (_) => const Scaffold(
                   appBar: PreferredSize(
                     preferredSize: Size.fromHeight(kToolbarHeight),
-                    child: SafeArea(
-                      child: Center(child: AppText.bold('Lỗi', size: 18)),
-                    ),
+                    child: SafeArea(child: Center(child: AppText.bold('Lỗi', size: 18))),
                   ),
                   body: Center(child: AppText.regular('Trang không tồn tại')),
                 ),

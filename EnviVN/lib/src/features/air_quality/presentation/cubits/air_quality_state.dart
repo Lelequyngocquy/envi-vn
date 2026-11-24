@@ -20,13 +20,15 @@ class AirQualityState extends Equatable {
     AirQualityStatus? status,
     AirQualityEntity? airQuality,
     String? errorMessage,
+    bool clearError = false,
     String? noticeMessage,
+    bool clearNotice = false,
   }) {
     return AirQualityState(
       status: status ?? this.status,
       airQuality: airQuality ?? this.airQuality,
-      errorMessage: errorMessage ?? this.errorMessage,
-      noticeMessage: noticeMessage ?? this.noticeMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      noticeMessage: clearNotice ? null : (noticeMessage ?? this.noticeMessage),
     );
   }
 

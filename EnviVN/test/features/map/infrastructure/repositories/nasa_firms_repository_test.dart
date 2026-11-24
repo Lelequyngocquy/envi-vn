@@ -4,7 +4,6 @@ import 'package:http/testing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:envivn/src/core/infrastructure/datasources/local/local_storage.dart';
-import 'package:envivn/src/features/map/infrastructure/models/thermal_hotspot_model.dart';
 import 'package:envivn/src/features/map/infrastructure/repositories/nasa_firms_repository.dart';
 
 void main() {
@@ -130,24 +129,17 @@ latitude,longitude,bright_ti4,scan,track,acq_date,acq_time,satellite,instrument,
     );
 
     test(
-      'falls back to sampleHotspots if storage is empty and network fails',
+      'returns failure with empty list and never leaks API key when storage is empty and network fails',
       () async {
+        const secretKey = 'super_secret_nasa_key_123';
         final mockClient = MockClient((request) async {
-          return http.Response('Internal Server Error', 500);
+          throw http.ClientException('Connection refused', request.url);
         });
-
-        final repository = NasaFirmsRepository(
-          client: mockClient,
-          storage: storage,
-          apiKey: 'test_key',
-        );
-
+        final repository = NasaFirmsRepository(client: mockClient, storage: storage, apiKey: secretKey);
         final result = await repository.getVietnamActiveFires();
-
-        expect(result.isSuccess, isTrue);
-        expect(result.data, isNotNull);
-        expect(result.data!.length, ThermalHotspotModel.sampleHotspots.length);
-        expect(result.message, contains('danh mục điểm nhiệt thực địa'));
+        expect(result.isSuccess, isFalse);
+        expect(result.data, isEmpty);
+        expect(result.message, isNot(contains(secretKey)));
       },
     );
   });

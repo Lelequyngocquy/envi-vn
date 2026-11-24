@@ -51,7 +51,10 @@ Future<void> setupGetIt() async {
   );
 
   sl.registerLazySingleton<EdgeAiInferenceService>(
-    () => EdgeAiInferenceService(downloadService: sl<ModelDownloadService>()),
+    () => EdgeAiInferenceService(
+      downloadService: sl<ModelDownloadService>(),
+      bridge: BackendSseBridge(client: sl<http.Client>()),
+    ),
   );
 
   sl.registerLazySingleton<IDetailsRepository>(

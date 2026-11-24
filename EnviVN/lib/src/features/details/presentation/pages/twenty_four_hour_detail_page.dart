@@ -203,7 +203,7 @@ class TwentyFourHourDetailPage extends StatelessWidget {
                                 const Gap(16),
                                 Aqi24hChartCard(hourlyPoints: aqi.hourlyAqi),
                                 const Gap(16),
-                                const HealthAdvisoryCard(),
+                                HealthAdvisoryCard(aqi: aqi.usAqi),
                               ],
                             ],
                           ),

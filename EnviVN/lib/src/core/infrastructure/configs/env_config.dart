@@ -163,14 +163,17 @@ class EnvConfig {
     defaultValue: 'https://firms.modaps.eosdis.nasa.gov/api',
   );
 
-  /// Key xác thực dịch vụ vệ tinh NASA FIRMS (5000 transactions / 10 phút)
-  static String get nasaFirmsMapKey => get(
-    'NASA_FIRMS_MAP_KEY',
-    defaultValue: 'aaa04b831a37f75677607b924c5df1de',
-  );
+  /// NASA FIRMS API key (never hardcoded in source or bundled assets).
+  static String get nasaFirmsMapKey {
+    const defined = String.fromEnvironment('NASA_FIRMS_MAP_KEY');
+    if (defined.isNotEmpty) return defined;
+    return get('NASA_FIRMS_MAP_KEY', defaultValue: '');
+  }
 
-  /// URL Backend Service
+  /// Backend Service base URL.
   static String get backendBaseUrl {
+    const defined = String.fromEnvironment('BACKEND_BASE_URL');
+    if (defined.isNotEmpty) return defined;
     final configured = get('BACKEND_BASE_URL');
     if (configured.isNotEmpty) return configured;
     if (kIsWeb) return 'http://localhost:8080';

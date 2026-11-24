@@ -60,35 +60,21 @@ class Aqi24hChartCard extends StatelessWidget {
   }
 
   Widget _build24hChart(List<HourlyAqiPoint> points) {
+    if (points.isEmpty) {
+      return const SizedBox(
+        height: 120,
+        child: Center(
+          child: AppText.regular('Chưa có dữ liệu diễn biến AQI 24 giờ', size: 12.5, color: UIColors.textMuted),
+        ),
+      );
+    }
     final spots = <FlSpot>[];
-    if (points.isNotEmpty) {
-      final step = (points.length / 9).clamp(1, 10).toInt();
-      for (int i = 0; i < points.length && spots.length < 9; i += step) {
-        final p = points[i];
-        final aqiVal = p.aqi.toDouble();
-        spots.add(FlSpot(spots.length.toDouble(), aqiVal));
-      }
-    } else {
-      const defaultVals = [
-        52.0,
-        58.0,
-        64.0,
-        52.0,
-        78.0,
-        94.0,
-        84.0,
-        72.0,
-        65.0,
-      ];
-      for (int i = 0; i < defaultVals.length; i++) {
-        spots.add(FlSpot(i.toDouble(), defaultVals[i]));
-      }
+    final step = (points.length / 9).clamp(1, 10).toInt();
+    for (int i = 0; i < points.length && spots.length < 9; i += step) {
+      final p = points[i];
+      spots.add(FlSpot(spots.length.toDouble(), p.aqi.toDouble()));
     }
-
-    double rawMax = 100.0;
-    if (spots.isNotEmpty) {
-      rawMax = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-    }
+    double rawMax = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
 
     const double minY = 0.0;
     final double maxY;

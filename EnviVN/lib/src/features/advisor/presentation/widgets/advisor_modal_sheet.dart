@@ -241,8 +241,11 @@ class AdvisorModalSheet extends StatelessWidget {
                                 pm25: pm25,
                                 temperature: temperature,
                                 uvIndex: uvIndex,
-                                hasRespiratoryCondition:
-                                    hasRespiratoryCondition,
+                                hasRespiratoryCondition: hasRespiratoryCondition,
+                                isRaining: isRaining,
+                                rainProbability: rainProbability,
+                                precipitation: precipitation,
+                                weatherCode: weatherCode,
                               );
                             }
                           },

@@ -5,17 +5,12 @@ import 'air_quality_state.dart';
 
 class AirQualityCubit extends Cubit<AirQualityState> {
   final IAirQualityRepository repository;
+  int _requestSeq = 0;
 
   AirQualityCubit({required this.repository}) : super(const AirQualityState()) {
     final cached = repository.getCachedAirQuality();
     if (cached != null) {
-      emit(
-        state.copyWith(
-          status: AirQualityStatus.success,
-          airQuality: cached,
-          noticeMessage: 'Dữ liệu đã lưu ngoại tuyến',
-        ),
-      );
+      emit(state.copyWith(status: AirQualityStatus.success, airQuality: cached, noticeMessage: 'Dữ liệu đã lưu ngoại tuyến'));
     }
   }
 
@@ -24,30 +19,14 @@ class AirQualityCubit extends Cubit<AirQualityState> {
     required double longitude,
     bool forceRefresh = false,
   }) async {
-    emit(state.copyWith(status: AirQualityStatus.loading, errorMessage: null));
-
-    final result = await repository.getAirQuality(
-      latitude: latitude,
-      longitude: longitude,
-      forceRefresh: forceRefresh,
-    );
-
+    final seq = ++_requestSeq;
+    emit(state.copyWith(status: AirQualityStatus.loading, clearError: true));
+    final result = await repository.getAirQuality(latitude: latitude, longitude: longitude, forceRefresh: forceRefresh);
+    if (isClosed || seq != _requestSeq) return;
     if (result.isSuccess && result.data != null) {
-      emit(
-        state.copyWith(
-          status: AirQualityStatus.success,
-          airQuality: result.data,
-          noticeMessage: result.message,
-        ),
-      );
+      emit(state.copyWith(status: AirQualityStatus.success, airQuality: result.data, noticeMessage: result.message, clearNotice: result.message == null, clearError: true));
     } else {
-      emit(
-        state.copyWith(
-          status: AirQualityStatus.failure,
-          errorMessage:
-              result.message ?? 'Không thể tải chỉ số chất lượng không khí',
-        ),
-      );
+      emit(state.copyWith(status: AirQualityStatus.failure, errorMessage: result.message ?? 'Không thể tải chỉ số chất lượng không khí'));
     }
   }
 

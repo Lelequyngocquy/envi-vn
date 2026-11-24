@@ -55,7 +55,7 @@ class MapState extends Equatable {
     this.isLoadingPointData = false,
     this.activeLayer = MapLayerType.weather,
     this.isShowedAllVN = false,
-    this.thermalHotspots = ThermalHotspotModel.sampleHotspots,
+    this.thermalHotspots = const [],
     this.isLoadingThermal = false,
     this.thermalNotice,
     this.isThermalFromCache = false,
@@ -87,6 +87,7 @@ class MapState extends Equatable {
     String? activeFilter,
     bool? showHeatmap,
     String? errorMessage,
+    bool clearErrorMessage = false,
     List<QuickCityTarget>? quickCities,
     QuickCityTarget? selectedQuickCity,
     bool clearSelectedQuickCity = false,
@@ -124,7 +125,7 @@ class MapState extends Equatable {
           : (selectedCityName ?? this.selectedCityName),
       activeFilter: activeFilter ?? this.activeFilter,
       showHeatmap: showHeatmap ?? this.showHeatmap,
-      errorMessage: errorMessage ?? this.errorMessage,
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
       quickCities: quickCities ?? this.quickCities,
       selectedQuickCity: clearSelectedQuickCity
           ? null

@@ -33,14 +33,16 @@ class DetailsState extends Equatable {
     DetailsEntity? details,
     DetailsEntity? weather,
     String? errorMessage,
+    bool clearError = false,
     String? noticeMessage,
+    bool clearNotice = false,
     DetailTab? activeDetailTab,
   }) {
     return DetailsState(
       status: status ?? this.status,
       details: details ?? weather ?? this.details,
-      errorMessage: errorMessage ?? this.errorMessage,
-      noticeMessage: noticeMessage ?? this.noticeMessage,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      noticeMessage: clearNotice ? null : (noticeMessage ?? this.noticeMessage),
       activeDetailTab: activeDetailTab ?? this.activeDetailTab,
     );
   }

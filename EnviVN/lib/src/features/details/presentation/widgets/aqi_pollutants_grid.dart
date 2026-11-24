@@ -12,6 +12,10 @@ class AqiPollutantsGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasPm25 = aqi.pm25 > 0;
+    final hasPm10 = aqi.pm10 > 0;
+    final hasOzone = aqi.ozone > 0;
+    final hasNo2 = aqi.nitrogenDioxide > 0;
     return GridView.count(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -22,42 +26,31 @@ class AqiPollutantsGrid extends StatelessWidget {
       children: [
         _GlassPollutantCard(
           label: 'PM2.5',
-          value: aqi.pm25 > 0 ? aqi.pm25.toStringAsFixed(1) : '24.5',
+          value: hasPm25 ? aqi.pm25.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
-          progress: ((aqi.pm25 > 0 ? aqi.pm25 : 24.5) / 75.0).clamp(0.0, 1.0),
-          progressColor: (aqi.pm25 > 35)
-              ? UIColors.aqiUnhealthySensitive
-              : UIColors.aqiGood,
+          progress: hasPm25 ? (aqi.pm25 / 75.0).clamp(0.0, 1.0) : 0.0,
+          progressColor: !hasPm25 ? UIColors.textMuted : (aqi.pm25 > 35 ? UIColors.aqiUnhealthySensitive : UIColors.aqiGood),
         ),
         _GlassPollutantCard(
           label: 'PM10',
-          value: aqi.pm10 > 0 ? aqi.pm10.toStringAsFixed(1) : '48.0',
+          value: hasPm10 ? aqi.pm10.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
-          progress: ((aqi.pm10 > 0 ? aqi.pm10 : 48.0) / 100.0).clamp(0.0, 1.0),
-          progressColor: (aqi.pm10 > 50)
-              ? UIColors.aqiModerate
-              : UIColors.aqiGood,
+          progress: hasPm10 ? (aqi.pm10 / 100.0).clamp(0.0, 1.0) : 0.0,
+          progressColor: !hasPm10 ? UIColors.textMuted : (aqi.pm10 > 50 ? UIColors.aqiModerate : UIColors.aqiGood),
         ),
         _GlassPollutantCard(
           label: 'O₃ (Ozone)',
-          value: aqi.ozone > 0 ? aqi.ozone.toStringAsFixed(1) : '38.2',
+          value: hasOzone ? aqi.ozone.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
-          progress: ((aqi.ozone > 0 ? aqi.ozone : 38.2) / 120.0).clamp(
-            0.0,
-            1.0,
-          ),
-          progressColor: UIColors.secondary,
+          progress: hasOzone ? (aqi.ozone / 120.0).clamp(0.0, 1.0) : 0.0,
+          progressColor: !hasOzone ? UIColors.textMuted : (aqi.ozone > 100 ? UIColors.aqiUnhealthySensitive : UIColors.secondary),
         ),
         _GlassPollutantCard(
           label: 'NO₂',
-          value: aqi.nitrogenDioxide > 0
-              ? aqi.nitrogenDioxide.toStringAsFixed(1)
-              : '19.5',
+          value: hasNo2 ? aqi.nitrogenDioxide.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
-          progress:
-              ((aqi.nitrogenDioxide > 0 ? aqi.nitrogenDioxide : 19.5) / 60.0)
-                  .clamp(0.0, 1.0),
-          progressColor: UIColors.aqiGood,
+          progress: hasNo2 ? (aqi.nitrogenDioxide / 60.0).clamp(0.0, 1.0) : 0.0,
+          progressColor: !hasNo2 ? UIColors.textMuted : (aqi.nitrogenDioxide > 40 ? UIColors.aqiModerate : UIColors.aqiGood),
         ),
       ],
     );

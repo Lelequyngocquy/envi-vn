@@ -49,16 +49,16 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (bool didPop, dynamic result) {
-        if (didPop) return;
-        final handled = context.read<HomeDashboardCubit>().handleBackPress();
-        if (!handled) {
-          Navigator.of(context).maybePop();
-        }
-      },
-      child: Scaffold(
+    return BlocSelector<HomeDashboardCubit, HomeDashboardState, int>(
+      selector: (state) => state.currentTab,
+      builder: (context, currentTab) {
+        return PopScope(
+          canPop: currentTab == 0,
+          onPopInvokedWithResult: (bool didPop, dynamic result) {
+            if (didPop) return;
+            context.read<HomeDashboardCubit>().handleBackPress();
+          },
+          child: Scaffold(
         backgroundColor: UIColors.bg,
         body: Stack(
           children: [
@@ -122,6 +122,8 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
+    );
+      },
     );
   }
 }

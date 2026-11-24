@@ -38,10 +38,6 @@ class StationModel extends StationEntity {
           double.tryParse(currentData['pm10']?.toString() ?? '') ??
           station.defaultPm10,
       updatedAt: DateTime.now(),
-      temperature: station.defaultTemp,
-      weatherCode: station.defaultWeatherCode,
-      humidity: station.defaultHumidity,
-      windSpeed: station.defaultWindSpeed,
     );
   }
 
@@ -56,10 +52,6 @@ class StationModel extends StationEntity {
       pm25: station.defaultPm25,
       pm10: station.defaultPm10,
       updatedAt: DateTime.now(),
-      temperature: station.defaultTemp,
-      weatherCode: station.defaultWeatherCode,
-      humidity: station.defaultHumidity,
-      windSpeed: station.defaultWindSpeed,
     );
   }
 }
