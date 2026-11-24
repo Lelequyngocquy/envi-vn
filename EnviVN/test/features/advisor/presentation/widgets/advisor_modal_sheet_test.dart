@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
 import 'package:envivn/src/core/infrastructure/services/edge_ai_inference_service.dart';
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_chat_cubit.dart';
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_cubit.dart';
 import 'package:envivn/src/features/advisor/presentation/widgets/advisor_modal_sheet.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
 
 class _FakeSheetBridge implements IAiChatBridge {
   @override

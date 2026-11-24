@@ -1,4 +1,6 @@
-class DetailsEntity {
+import 'package:equatable/equatable.dart';
+
+class DetailsEntity extends Equatable {
   final double currentTemp;
   final double apparentTemp;
   final int relativeHumidity;
@@ -24,9 +26,12 @@ class DetailsEntity {
     this.dailyForecast = const [],
     this.isOfflineCache = false,
   });
+
+  @override
+  List<Object?> get props => [currentTemp, apparentTemp, relativeHumidity, precipitation, weatherCode, windSpeed, uvIndex, surfacePressure, hourlyForecast, dailyForecast, isOfflineCache];
 }
 
-class HourlyDetailsPoint {
+class HourlyDetailsPoint extends Equatable {
   final DateTime time;
   final double temperature;
   final int humidity;
@@ -40,9 +45,12 @@ class HourlyDetailsPoint {
     required this.precipitationProbability,
     required this.weatherCode,
   });
+
+  @override
+  List<Object?> get props => [time, temperature, humidity, precipitationProbability, weatherCode];
 }
 
-class DailyDetailsPoint {
+class DailyDetailsPoint extends Equatable {
   final DateTime date;
   final int weatherCode;
   final double maxTemp;
@@ -56,4 +64,7 @@ class DailyDetailsPoint {
     required this.minTemp,
     required this.precipitationSum,
   });
+
+  @override
+  List<Object?> get props => [date, weatherCode, maxTemp, minTemp, precipitationSum];
 }

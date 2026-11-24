@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
-import '../../domain/interfaces/i_details_repository.dart';
-import '../widgets/detail_segmented_filter.dart';
+import 'package:envivn/src/core/domain/interfaces/i_details_repository.dart';
+import '../../domain/entities/detail_tab.dart';
 import 'details_state.dart';
 
 class DetailsCubit extends Cubit<DetailsState> {

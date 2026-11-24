@@ -1,11 +1,9 @@
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/app_icon.dart';
 import 'package:envivn/src/core/presentation/widgets/app_text.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_cubit.dart';
 import 'package:envivn/src/shared/widgets/app_button.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 
 class FutureWorkHighlight {
@@ -87,11 +85,7 @@ class FutureWorkWidget extends StatelessWidget {
     }
     if (Navigator.canPop(context)) {
       Navigator.pop(context);
-      return;
     }
-    try {
-      context.read<HomeDashboardCubit>().setTab(0);
-    } catch (_) {}
   }
 
   @override

@@ -68,16 +68,17 @@ class _HomePageState extends State<HomePage> {
                 return ClipRect(
                   child: IndexedStack(
                     index: state.currentTab,
-                    children: const [
-                      HomeDashboardView(),
-                      MapPage(),
-                      ExplorePage(),
+                    children: [
+                      const HomeDashboardView(),
+                      const MapPage(),
+                      const ExplorePage(),
                       FutureWorkWidget(
                         title: 'Cài đặt hệ thống',
                         subtitle:
                             'Khu vực quản lý thiết lập cá nhân, thông báo và tùy chỉnh ứng dụng đang được hoàn thiện.',
-                        badgeText: 'Sắp ra mắt • COMMING SOON',
+                        badgeText: 'Sắp ra mắt • COMING SOON',
                         centerIcon: Icons.tune_rounded,
+                        onBack: () => context.read<HomeDashboardCubit>().setTab(0),
                       ),
                     ],
                   ),

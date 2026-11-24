@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
-import 'package:envivn/src/core/infrastructure/datasources/local/local_storage.dart';
-import 'package:envivn/src/core/infrastructure/services/location_service.dart';
+import 'package:envivn/src/core/domain/interfaces/i_cache_store.dart';
+import 'package:envivn/src/core/domain/interfaces/i_location_service.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_cubit.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_state.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_state.dart';
 import 'package:envivn/src/features/details/presentation/cubits/details_cubit.dart';
@@ -10,110 +14,112 @@ import 'package:envivn/src/features/details/presentation/cubits/details_state.da
 import 'home_dashboard_state.dart';
 
 class HomeDashboardCubit extends Cubit<HomeDashboardState> {
-  final LocalStorage storage;
-  final LocationService locationService;
+  final AppLocationCubit _locationCubit;
+  final bool _ownsLocationCubit;
   final DetailsCubit detailsCubit;
   final AirQualityCubit airQualityCubit;
+  StreamSubscription<AppLocationState>? _locationSub;
+  AppLocationEntity _lastMirroredLocation = AppLocationEntity.defaultLocation;
+  bool _suppressLocationFetch = false;
   int _fetchSeq = 0;
 
   HomeDashboardCubit({
-    required this.storage,
-    required this.locationService,
+    AppLocationCubit? appLocationCubit,
+    ICacheStore? storage,
+    ILocationService? locationService,
     required this.detailsCubit,
     required this.airQualityCubit,
-  }) : super(const HomeDashboardState());
+  }) : assert(appLocationCubit != null || (storage != null && locationService != null)),
+       _locationCubit = appLocationCubit ?? AppLocationCubit(cacheStore: storage!, locationService: locationService!),
+       _ownsLocationCubit = appLocationCubit == null,
+       super(const HomeDashboardState()) {
+    _lastMirroredLocation = _locationCubit.state.currentLocation;
+    _locationSub = _locationCubit.stream.listen(_onAppLocationChanged);
+  }
+
+  void _onAppLocationChanged(AppLocationState locState) {
+    if (isClosed) return;
+    final locationChanged = locState.currentLocation != _lastMirroredLocation;
+    _lastMirroredLocation = locState.currentLocation;
+    emit(
+      state.copyWith(
+        currentCity: locState.currentLocation,
+        isLocationPermissionGranted: locState.isLocationPermissionGranted,
+        isChangingLocation: locState.isChangingLocation,
+        hasPendingMapSync: locState.hasPendingMapSync,
+        noticeMessage: locState.noticeMessage,
+        clearNotice: locState.noticeMessage == null,
+        lastUpdated: locState.lastUpdated,
+      ),
+    );
+    if (locationChanged && !_suppressLocationFetch) {
+      _fetchDataForCity(locState.currentLocation);
+    }
+  }
 
   Future<void> initDashboard() async {
     emit(state.copyWith(status: DashboardStatus.loading));
-    final savedCity = storage.getSelectedCity();
-    AppLocationEntity targetCity = AppLocationEntity.defaultLocation;
-    if (savedCity != null) {
-      final rawName = savedCity['name']?.toString() ?? AppLocationEntity.defaultLocation.displayName;
-      final normalizedName = rawName.startsWith('Vị trí hiện tại') ? 'Vị trí hiện tại' : rawName;
-      final isGpsCity = normalizedName == 'Vị trí hiện tại';
-      final isCustom = rawName.startsWith('Điểm ghim');
-      final lat = double.tryParse(savedCity['lat']?.toString() ?? '') ?? AppLocationEntity.defaultLocation.latitude;
-      final lon = double.tryParse(savedCity['lon']?.toString() ?? '') ?? AppLocationEntity.defaultLocation.longitude;
-      if (isCustom) {
-        targetCity = AppLocationEntity.customPin(latitude: lat, longitude: lon, customName: rawName, referenceProvince: savedCity['province']?.toString());
-      } else if (isGpsCity) {
-        targetCity = AppLocationEntity.gps(latitude: lat, longitude: lon);
-      } else {
-        targetCity = AppLocationEntity.city(name: normalizedName, province: savedCity['province']?.toString() ?? (savedCity['name']?.toString() ?? AppLocationEntity.defaultLocation.provinceOrRegion), latitude: lat, longitude: lon);
-      }
-    }
-    final isGrantedInOs = await locationService.checkPermissionGranted();
-    if (isClosed) return;
-    if (!isGrantedInOs && storage.isLocationPermissionGranted()) {
-      await storage.saveLocationPermission(false);
-    } else if (isGrantedInOs && !storage.isLocationPermissionGranted()) {
-      await storage.saveLocationPermission(true);
-    }
-    if ((targetCity.isGps || targetCity.name.startsWith('Vị trí hiện tại')) && !isGrantedInOs) {
-      targetCity = AppLocationEntity.defaultLocation;
-      await storage.saveSelectedCity(targetCity.name, targetCity.latitude, targetCity.longitude);
+    _suppressLocationFetch = true;
+    AppLocationEntity targetCity;
+    try {
+      targetCity = await _locationCubit.initLocation();
+    } finally {
+      _suppressLocationFetch = false;
     }
     if (isClosed) return;
-    emit(state.copyWith(currentCity: targetCity, lastUpdated: storage.getLastUpdateTime() ?? DateTime.now(), isLocationPermissionGranted: isGrantedInOs));
+    _lastMirroredLocation = targetCity;
+    emit(
+      state.copyWith(
+        currentCity: targetCity,
+        lastUpdated: _locationCubit.state.lastUpdated ?? DateTime.now(),
+        isLocationPermissionGranted: _locationCubit.state.isLocationPermissionGranted,
+      ),
+    );
     await _fetchDataForCity(targetCity);
   }
 
   Future<void> changeCity(AppLocationEntity city) async {
     emit(state.copyWith(status: DashboardStatus.loading, isChangingLocation: true, currentCity: city, hasPendingMapSync: true, clearNotice: true));
+    _suppressLocationFetch = true;
     try {
-      await storage.saveSelectedCity(city.name, city.latitude, city.longitude);
-      if (isClosed) return;
-      await _fetchDataForCity(city);
-    } catch (_) {
-      if (isClosed) return;
-      emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể lưu hoặc tải dữ liệu khu vực đã chọn.'));
+      await _locationCubit.selectLocation(city, syncToMap: true);
+    } finally {
+      _suppressLocationFetch = false;
     }
+    if (isClosed) return;
+    _lastMirroredLocation = city;
+    await _fetchDataForCity(city);
   }
 
   Future<void> syncLocationFromMap(AppLocationEntity location) async {
     if (state.currentCity == location) return;
     emit(state.copyWith(status: DashboardStatus.loading, isChangingLocation: false, currentCity: location, hasPendingMapSync: false, clearNotice: true));
+    _suppressLocationFetch = true;
     try {
-      await storage.saveSelectedCity(location.displayName, location.latitude, location.longitude);
-      if (isClosed) return;
-      await _fetchDataForCity(location);
-    } catch (_) {
-      if (isClosed) return;
-      emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể đồng bộ dữ liệu vị trí từ bản đồ.'));
+      await _locationCubit.syncLocationFromMap(location);
+    } finally {
+      _suppressLocationFetch = false;
     }
+    if (isClosed) return;
+    _lastMirroredLocation = location;
+    await _fetchDataForCity(location);
   }
 
   Future<void> detectGpsLocation() async {
+    _suppressLocationFetch = true;
+    AppLocationEntity? resolved;
     try {
-      final isGranted = await locationService.checkPermissionGranted();
-      if (isClosed) return;
-      emit(state.copyWith(status: DashboardStatus.loading, isChangingLocation: true, noticeMessage: isGranted ? null : 'Quyền truy cập vị trí đang bị tắt', clearNotice: isGranted));
-      final locationResult = await locationService.getCurrentLocation();
-      if (isClosed) return;
-      if (locationResult.isDefault || locationResult.isPermissionDenied) {
-        await storage.saveLocationPermission(false);
-        final defaultCity = AppLocationEntity.defaultLocation;
-        await storage.saveSelectedCity(defaultCity.name, defaultCity.latitude, defaultCity.longitude);
-        if (isClosed) return;
-        emit(state.copyWith(currentCity: defaultCity, isLocationPermissionGranted: false, hasPendingMapSync: true, noticeMessage: locationResult.errorMessage, clearNotice: locationResult.errorMessage == null));
-        await _fetchDataForCity(defaultCity);
-        return;
-      }
-      const displayName = 'Vị trí hiện tại';
-      final gpsCity = AppLocationEntity.gps(latitude: locationResult.latitude, longitude: locationResult.longitude, displayName: displayName);
-      await storage.saveLocationPermission(true);
-      await storage.saveSelectedCity(gpsCity.name, gpsCity.latitude, gpsCity.longitude);
-      if (isClosed) return;
-      emit(state.copyWith(currentCity: gpsCity, isLocationPermissionGranted: true, hasPendingMapSync: true, noticeMessage: null, clearNotice: true));
-      await _fetchDataForCity(gpsCity);
-    } catch (_) {
-      if (isClosed) return;
-      emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể xác định vị trí GPS lúc này.'));
+      resolved = await _locationCubit.detectGpsLocation();
+    } finally {
+      _suppressLocationFetch = false;
     }
+    if (isClosed || resolved == null) return;
+    _lastMirroredLocation = resolved;
+    await _fetchDataForCity(resolved);
   }
 
   Future<void> revertToGpsOrHome() async {
-    final isGranted = await locationService.checkPermissionGranted();
+    final isGranted = await _locationCubit.locationService.checkPermissionGranted();
     if (isClosed) return;
     if (isGranted) {
       await detectGpsLocation();
@@ -123,6 +129,7 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
   }
 
   void clearNotice() {
+    _locationCubit.clearNotice();
     if (state.noticeMessage != null) {
       emit(state.copyWith(clearNotice: true));
     }
@@ -146,15 +153,19 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       final detailsFailed = detailsCubit.state.status == DetailsStatus.failure;
       final aqiFailed = airQualityCubit.state.status == AirQualityStatus.failure;
       if (detailsFailed && aqiFailed) {
+        _locationCubit.failLocationChange('Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.');
         emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.'));
         return;
       }
       final aqi = airQualityCubit.state.airQuality.usAqi;
       final details = detailsCubit.state.details;
       final hasAlert = aqi > 100 || details.uvIndex >= 8 || (details.hourlyForecast.isNotEmpty && details.hourlyForecast.first.precipitationProbability >= 50);
-      emit(state.copyWith(status: DashboardStatus.success, isChangingLocation: false, lastUpdated: DateTime.now(), hasNotification: hasAlert));
+      final now = DateTime.now();
+      _locationCubit.finishLocationChange(updatedAt: now);
+      emit(state.copyWith(status: DashboardStatus.success, isChangingLocation: false, lastUpdated: now, hasNotification: hasAlert));
     } catch (_) {
       if (isClosed || seq != _fetchSeq) return;
+      _locationCubit.failLocationChange('Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.');
       emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.'));
     }
   }
@@ -169,26 +180,18 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
   }
 
   Future<void> checkLocationPermissionStatus() async {
-    final isGrantedInOs = await locationService.checkPermissionGranted();
-    if (isClosed) return;
-    if (!isGrantedInOs && storage.isLocationPermissionGranted()) {
-      await storage.saveLocationPermission(false);
-    } else if (isGrantedInOs && !storage.isLocationPermissionGranted()) {
-      await storage.saveLocationPermission(true);
-    }
-    if (isClosed) return;
-    if (isGrantedInOs != state.isLocationPermissionGranted) {
-      emit(state.copyWith(isLocationPermissionGranted: isGrantedInOs));
-    }
+    await _locationCubit.checkLocationPermissionStatus();
   }
 
   void markPendingMapSync() {
+    _locationCubit.markPendingMapSync();
     if (!state.hasPendingMapSync) {
       emit(state.copyWith(hasPendingMapSync: true));
     }
   }
 
   void consumeMapSync() {
+    _locationCubit.consumeMapSync();
     if (state.hasPendingMapSync) {
       emit(state.copyWith(hasPendingMapSync: false));
     }
@@ -213,8 +216,8 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
 
   Future<void> skipLocationPermission({void Function()? onCompleted}) async {
     final defaultCity = AppLocationEntity.defaultLocation;
-    await storage.saveLocationPermission(false);
-    await storage.saveSelectedCity(defaultCity.name, defaultCity.latitude, defaultCity.longitude);
+    await _locationCubit.cacheStore.saveLocationPermission(false);
+    await _locationCubit.cacheStore.saveSelectedLocation(defaultCity);
     if (isClosed) return;
     if (state.currentCity != defaultCity) {
       await changeCity(defaultCity);
@@ -222,5 +225,14 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     if (isClosed) return;
     setTab(0);
     onCompleted?.call();
+  }
+
+  @override
+  Future<void> close() async {
+    await _locationSub?.cancel();
+    if (_ownsLocationCubit) {
+      await _locationCubit.close();
+    }
+    return super.close();
   }
 }

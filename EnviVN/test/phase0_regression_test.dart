@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
 import 'package:envivn/src/core/domain/entities/base.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/interfaces/i_air_quality_repository.dart';
 import 'package:envivn/src/core/infrastructure/configs/env_config.dart';
 import 'package:envivn/src/core/infrastructure/services/edge_ai_inference_service.dart';
 import 'package:envivn/src/core/presentation/widgets/app_dialog.dart';
@@ -13,10 +16,7 @@ import 'package:envivn/src/features/advisor/domain/entities/advisor_decision.dar
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_chat_cubit.dart';
 import 'package:envivn/src/features/advisor/presentation/cubits/advisor_cubit.dart';
 import 'package:envivn/src/features/advisor/presentation/widgets/advisor_modal_sheet.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/air_quality/domain/interfaces/i_air_quality_repository.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
 import 'package:envivn/src/features/details/presentation/widgets/health_advisory_card.dart';
 import 'package:envivn/src/features/map/domain/entities/map_layer_type.dart';
 import 'package:envivn/src/features/map/domain/entities/station_entity.dart';

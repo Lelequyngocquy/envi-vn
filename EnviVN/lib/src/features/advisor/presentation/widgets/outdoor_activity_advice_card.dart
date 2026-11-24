@@ -4,11 +4,11 @@ import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/common/utils/activity_advice_helper.dart';
 import 'package:envivn/src/common/utils/aqi_helper.dart';
 import 'package:envivn/src/common/utils/weather_code_helper.dart';
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
 import 'package:envivn/src/core/presentation/widgets/app_icon.dart';
 import 'package:envivn/src/core/presentation/widgets/app_status_tag.dart';
 import 'package:envivn/src/core/presentation/widgets/app_text.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 import 'package:gap/gap.dart';
 

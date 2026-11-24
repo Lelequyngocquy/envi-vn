@@ -1,6 +1,8 @@
-import 'package:envivn/src/common/utils/heat_index_helper.dart';
+import 'package:equatable/equatable.dart';
 
-class StationEntity {
+import '../../../../core/domain/utils/heat_index_calculator.dart';
+
+class StationEntity extends Equatable {
   final String id;
   final String name;
   final String province;
@@ -10,7 +12,6 @@ class StationEntity {
   final double pm25;
   final double pm10;
   final DateTime updatedAt;
-
   final double? temperature;
   final double? apparentTemp;
   final int? weatherCode;
@@ -18,13 +19,11 @@ class StationEntity {
   final double? windSpeed;
   final double? precipitation;
   final double? uvIndex;
-
   final bool isFloodBlackspot;
   final int? historicalDepthCm;
   final String? floodTriggerCondition;
   final String? floodProneTime;
   final String? spotDescription;
-
   final bool isThermalHotspot;
   final bool isActiveFire;
   final String? fireType;
@@ -64,11 +63,9 @@ class StationEntity {
     this.fireDetectedTime,
   });
 
-  double get calculatedHeatIndex =>
-      HeatIndexHelper.calculateHeatIndex(temperature ?? 28.0, humidity ?? 70);
+  double get calculatedHeatIndex => HeatIndexCalculator.calculateHeatIndex(temperature ?? 28.0, humidity ?? 70);
 
-  HeatRiskLevel get heatRiskLevel =>
-      HeatIndexHelper.getRiskLevel(calculatedHeatIndex);
+  HeatRiskGrade get heatRiskGrade => HeatIndexCalculator.getRiskGrade(calculatedHeatIndex);
 
   bool get isHighFloodRisk => (precipitation ?? 0.0) >= 20.0;
 
@@ -121,18 +118,48 @@ class StationEntity {
       uvIndex: uvIndex ?? this.uvIndex,
       isFloodBlackspot: isFloodBlackspot ?? this.isFloodBlackspot,
       historicalDepthCm: historicalDepthCm ?? this.historicalDepthCm,
-      floodTriggerCondition:
-          floodTriggerCondition ?? this.floodTriggerCondition,
+      floodTriggerCondition: floodTriggerCondition ?? this.floodTriggerCondition,
       floodProneTime: floodProneTime ?? this.floodProneTime,
       spotDescription: spotDescription ?? this.spotDescription,
       isThermalHotspot: isThermalHotspot ?? this.isThermalHotspot,
       isActiveFire: isActiveFire ?? this.isActiveFire,
       fireType: fireType ?? this.fireType,
-      fireBrightnessCelsius:
-          fireBrightnessCelsius ?? this.fireBrightnessCelsius,
+      fireBrightnessCelsius: fireBrightnessCelsius ?? this.fireBrightnessCelsius,
       fireConfidence: fireConfidence ?? this.fireConfidence,
       fireProneSeason: fireProneSeason ?? this.fireProneSeason,
       fireDetectedTime: fireDetectedTime ?? this.fireDetectedTime,
     );
   }
+
+  @override
+  List<Object?> get props => [
+    id,
+    name,
+    province,
+    latitude,
+    longitude,
+    aqi,
+    pm25,
+    pm10,
+    updatedAt,
+    temperature,
+    apparentTemp,
+    weatherCode,
+    humidity,
+    windSpeed,
+    precipitation,
+    uvIndex,
+    isFloodBlackspot,
+    historicalDepthCm,
+    floodTriggerCondition,
+    floodProneTime,
+    spotDescription,
+    isThermalHotspot,
+    isActiveFire,
+    fireType,
+    fireBrightnessCelsius,
+    fireConfidence,
+    fireProneSeason,
+    fireDetectedTime,
+  ];
 }

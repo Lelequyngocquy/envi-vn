@@ -1,5 +1,3 @@
-import '../app_location_entity.dart';
-
 enum PopularLocation {
   hanoi(
     id: 'city_hanoi',
@@ -116,15 +114,4 @@ enum PopularLocation {
 
   String get name => displayName;
   String get province => provinceOrRegion;
-
-  AppLocationEntity toEntity() {
-    return AppLocationEntity(
-      id: id,
-      displayName: displayName,
-      provinceOrRegion: provinceOrRegion,
-      latitude: latitude,
-      longitude: longitude,
-      originType: LocationOriginType.popularCity,
-    );
-  }
 }

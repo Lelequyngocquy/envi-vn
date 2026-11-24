@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/air_quality_entity.dart';
+import '../../../../core/domain/entities/air_quality_entity.dart';
 
 enum AirQualityStatus { initial, loading, success, failure }
 

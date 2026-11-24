@@ -1,16 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
 import 'package:envivn/src/core/domain/entities/base.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/air_quality/domain/interfaces/i_air_quality_repository.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/interfaces/i_air_quality_repository.dart';
+import 'package:envivn/src/core/domain/interfaces/i_details_repository.dart';
 import 'package:envivn/src/features/map/domain/entities/map_layer_type.dart';
 import 'package:envivn/src/features/map/domain/entities/quick_city_target.dart';
 import 'package:envivn/src/features/map/domain/entities/station_entity.dart';
 import 'package:envivn/src/features/map/domain/interfaces/i_map_repository.dart';
 import 'package:envivn/src/features/map/presentation/cubits/map_cubit.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
-import 'package:envivn/src/features/details/domain/interfaces/i_details_repository.dart';
 
 class FakeMapRepository implements IMapRepository {
   @override

@@ -5,15 +5,17 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../core/domain/entities/base.dart';
+import '../../../../core/domain/entities/thermal_hotspot_entity.dart';
+import '../../../../core/domain/interfaces/i_cache_store.dart';
 import '../../../../core/infrastructure/configs/env_config.dart';
-import '../../../../core/infrastructure/datasources/local/local_storage.dart';
 import '../../domain/interfaces/i_nasa_firms_repository.dart';
 import '../models/thermal_hotspot_model.dart';
 import '../paths/nasa_firms_paths.dart';
 
 class NasaFirmsRepository implements INasaFirmsRepository {
   final http.Client _client;
-  final LocalStorage storage;
+  final bool _ownsClient;
+  final ICacheStore storage;
   final String? _baseUrlOverride;
 
   NasaFirmsRepository({
@@ -21,13 +23,18 @@ class NasaFirmsRepository implements INasaFirmsRepository {
     required this.storage,
     String? baseUrl,
   }) : _client = client ?? http.Client(),
+       _ownsClient = client == null,
        _baseUrlOverride = baseUrl;
+
+  void close() {
+    if (_ownsClient) _client.close();
+  }
 
   static const Duration cacheTtl = Duration(minutes: 15);
   static const Duration rateLimitCooldown = Duration(minutes: 10);
 
   DateTime? _lastRateLimitTime;
-  Future<BaseResult<List<ThermalHotspotModel>>>? _activeFetchOperation;
+  Future<BaseResult<List<ThermalHotspotEntity>>>? _activeFetchOperation;
   bool _isServingCachedData = false;
 
   @override
@@ -37,7 +44,7 @@ class NasaFirmsRepository implements INasaFirmsRepository {
   DateTime? getLastUpdateTime() => storage.getThermalLastUpdateTime();
 
   @override
-  Future<BaseResult<List<ThermalHotspotModel>>> getVietnamActiveFires({
+  Future<BaseResult<List<ThermalHotspotEntity>>> getVietnamActiveFires({
     bool forceRefresh = false,
   }) {
     if (!forceRefresh && _activeFetchOperation != null) {
@@ -52,7 +59,7 @@ class NasaFirmsRepository implements INasaFirmsRepository {
     });
   }
 
-  Future<BaseResult<List<ThermalHotspotModel>>> _fetchInternal({
+  Future<BaseResult<List<ThermalHotspotEntity>>> _fetchInternal({
     required bool forceRefresh,
   }) async {
     final now = DateTime.now();
@@ -108,7 +115,7 @@ class NasaFirmsRepository implements INasaFirmsRepository {
     }
   }
 
-  BaseResult<List<ThermalHotspotModel>> _fallbackToStaleCache({
+  BaseResult<List<ThermalHotspotEntity>> _fallbackToStaleCache({
     required String reason,
   }) {
     final cached = _loadFromStorage();

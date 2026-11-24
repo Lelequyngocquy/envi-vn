@@ -1,11 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
 import 'package:envivn/src/core/domain/entities/base.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
-import 'package:envivn/src/features/details/domain/interfaces/i_details_repository.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/interfaces/i_details_repository.dart';
+import 'package:envivn/src/features/details/domain/entities/detail_tab.dart';
 import 'package:envivn/src/features/details/presentation/cubits/details_cubit.dart';
 import 'package:envivn/src/features/details/presentation/cubits/details_state.dart';
-import 'package:envivn/src/features/details/presentation/widgets/detail_segmented_filter.dart';
 
 class FakeDetailsRepository implements IDetailsRepository {
   DetailsEntity? cached;

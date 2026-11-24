@@ -1,17 +1,17 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/domain/entities/base.dart';
-import '../../../../core/infrastructure/datasources/local/local_storage.dart';
+import '../../../../core/domain/entities/details_entity.dart';
+import '../../../../core/domain/interfaces/i_cache_store.dart';
+import '../../../../core/domain/interfaces/i_details_repository.dart';
 import '../../../../core/infrastructure/datasources/network/api/configs/endpoint.dart';
 import '../../../../core/infrastructure/datasources/network/api/restful_request.dart';
-import '../../domain/entities/details_entity.dart';
-import '../../domain/interfaces/i_details_repository.dart';
 import '../models/details_model.dart';
 import '../paths/details_paths.dart';
 
 class DetailsRepository implements IDetailsRepository {
   final RestfulRequest network;
-  final LocalStorage storage;
+  final ICacheStore storage;
 
   DetailsRepository({required this.network, required this.storage});
 

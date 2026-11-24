@@ -6,8 +6,8 @@ import '../../../../common/constants/colors.dart';
 import '../../../../core/domain/entities/app_location_entity.dart';
 import '../../../../core/presentation/widgets/app_icon.dart';
 import '../../../../core/presentation/widgets/app_text.dart';
-import '../../../air_quality/domain/entities/air_quality_entity.dart';
-import '../../../details/domain/entities/details_entity.dart';
+import '../../../../core/domain/entities/air_quality_entity.dart';
+import '../../../../core/domain/entities/details_entity.dart';
 import '../cubits/advisor_chat_cubit.dart';
 import '../cubits/advisor_chat_state.dart';
 

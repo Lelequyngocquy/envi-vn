@@ -3,13 +3,13 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:envivn/src/common/constants/colors.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_cubit.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_state.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_state.dart';
 import 'package:envivn/src/features/details/presentation/cubits/details_cubit.dart';
 import 'package:envivn/src/features/details/presentation/cubits/details_state.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_cubit.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_state.dart';
 import 'package:envivn/src/shared/widgets/app_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -106,13 +106,13 @@ class _StoryPreviewPageState extends State<StoryPreviewPage> {
     return Scaffold(
       backgroundColor: UIColors.bg,
       body: SafeArea(
-        child: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-          builder: (context, homeState) {
+        child: BlocBuilder<AppLocationCubit, AppLocationState>(
+          builder: (context, locationState) {
             return BlocBuilder<AirQualityCubit, AirQualityState>(
               builder: (context, aqiState) {
                 return BlocBuilder<DetailsCubit, DetailsState>(
                   builder: (context, detailsState) {
-                    final city = homeState.currentCity;
+                    final city = locationState.currentLocation;
                     final aqi = aqiState.airQuality;
                     final weather = detailsState.details;
                     final now = DateTime.now();

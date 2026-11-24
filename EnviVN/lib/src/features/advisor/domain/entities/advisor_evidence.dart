@@ -1,4 +1,4 @@
-import 'package:envivn/src/common/utils/weather_code_helper.dart';
+import '../../../../core/domain/utils/wmo_weather_rules.dart';
 import 'quick_prompt_type.dart';
 
 class AdvisorEvidence {
@@ -246,14 +246,12 @@ class AdvisorEvidence {
 
     final isOutdoorCase = prompt != QuickPromptType.ventilation;
     if (isOutdoorCase) {
-      final weatherInfo = WeatherCodeHelper.getInfo(weatherCode);
-      final actuallyRaining =
-          isRaining || precipitation > 0.1 || weatherInfo.isRain;
-
+      final isRainCode = WmoWeatherRules.isRainCode(weatherCode);
+      final isThunder = WmoWeatherRules.isThunderCode(weatherCode);
+      final weatherDesc = WmoWeatherRules.describe(weatherCode);
+      final actuallyRaining = isRaining || precipitation > 0.1 || isRainCode;
       if (actuallyRaining) {
-        final rainStr = precipitation > 0.0
-            ? '${weatherInfo.description} (${precipitation.toStringAsFixed(1)} mm)'
-            : weatherInfo.description;
+        final rainStr = precipitation > 0.0 ? '$weatherDesc (${precipitation.toStringAsFixed(1)} mm)' : weatherDesc;
         list.add(
           AdvisorEvidence(
             metricName: 'Thời tiết & Mưa',
@@ -265,7 +263,7 @@ class AdvisorEvidence {
                       ? 'Trời đang có mưa, bắt buộc mang theo áo mưa và giảm tốc độ lái xe'
                       : 'Đang có mưa ẩm ngoài trời, hạn chế để trẻ em và người già ra ngoài'),
             isExceeded: true,
-            isDanger: weatherInfo.isThunder || precipitation >= 10.0,
+            isDanger: isThunder || precipitation >= 10.0,
           ),
         );
       } else if (rainProbability >= 40) {

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
+import '../../domain/entities/detail_tab.dart';
 
-enum DetailTab { all, weather, airQuality }
+export '../../domain/entities/detail_tab.dart';
 
 class DetailSegmentedFilter extends StatelessWidget {
   final DetailTab activeTab;

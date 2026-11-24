@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 
 class TwentyFourHourTempChart extends StatelessWidget {

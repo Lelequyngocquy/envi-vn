@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../../domain/interfaces/i_ai_chat_service.dart';
 import '../configs/env_config.dart';
 
 abstract class IAiChatBridge {
@@ -110,19 +111,22 @@ class BackendSseBridge implements IAiChatBridge {
   }
 }
 
-class EdgeAiInferenceService {
+class EdgeAiInferenceService implements IAiChatService {
   final IAiChatBridge _bridge;
   bool _isChatActive = false;
 
   EdgeAiInferenceService({IAiChatBridge? bridge}) : _bridge = bridge ?? BackendSseBridge();
 
+  @override
   bool get isChatActive => _isChatActive;
 
+  @override
   Future<void> startChatSession({double? lat, double? lon}) async {
     await _bridge.startSession(lat: lat, lon: lon);
     _isChatActive = true;
   }
 
+  @override
   Stream<String> sendMessageStream(
     String userMessage, {
     List<Map<String, String>> history = const [],
@@ -133,6 +137,7 @@ class EdgeAiInferenceService {
     yield* _bridge.generateResponseStream(userMessage, history: history);
   }
 
+  @override
   Future<String> sendMessage(
     String userMessage, {
     List<Map<String, String>> history = const [],
@@ -143,11 +148,13 @@ class EdgeAiInferenceService {
     return _bridge.generateResponse(userMessage, history: history);
   }
 
+  @override
   Future<void> resetChatSession({double? lat, double? lon}) async {
     await _bridge.startSession(lat: lat, lon: lon);
     _isChatActive = true;
   }
 
+  @override
   Future<void> dispose() async {
     _isChatActive = false;
     await _bridge.close();

@@ -1,4 +1,4 @@
-import '../../domain/entities/details_entity.dart';
+import '../../../../core/domain/entities/details_entity.dart';
 
 class DetailsModel extends DetailsEntity {
   const DetailsModel({

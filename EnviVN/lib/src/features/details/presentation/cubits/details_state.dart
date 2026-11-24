@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/details_entity.dart';
-import '../widgets/detail_segmented_filter.dart';
+import '../../../../core/domain/entities/details_entity.dart';
+import '../../domain/entities/detail_tab.dart';
 
 enum DetailsStatus { initial, loading, success, failure }
 

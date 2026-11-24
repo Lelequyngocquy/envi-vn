@@ -3,18 +3,19 @@ import 'dart:ui';
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/common/utils/aqi_helper.dart';
 import 'package:envivn/src/common/utils/weather_code_helper.dart';
-import 'package:envivn/src/core/infrastructure/configs/env_config.dart';
+import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
+import 'package:envivn/src/core/domain/entities/map_tile_config.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_cubit.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_state.dart';
 import 'package:envivn/src/core/presentation/widgets/app_icon.dart';
 import 'package:envivn/src/core/presentation/widgets/app_text.dart';
 import 'package:envivn/src/core/presentation/widgets/loading.dart';
-import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_cubit.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_state.dart';
 import 'package:envivn/src/features/map/domain/entities/flood_blackspot.dart';
 import 'package:envivn/src/features/map/domain/entities/map_layer_type.dart';
 import 'package:envivn/src/features/map/domain/entities/station_entity.dart';
 import 'package:envivn/src/features/map/presentation/cubits/map_cubit.dart';
 import 'package:envivn/src/features/map/presentation/cubits/map_state.dart';
+import 'package:envivn/src/features/map/presentation/extensions/map_ui_extensions.dart';
 import 'package:envivn/src/features/map/presentation/widgets/dropped_pin_marker_widget.dart';
 import 'package:envivn/src/features/map/presentation/widgets/map_layer_selector_sheet.dart';
 import 'package:envivn/src/features/map/presentation/widgets/map_side_controls.dart';
@@ -61,85 +62,36 @@ class _MapPageState extends State<MapPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final mapCubit = context.read<MapCubit>();
-      final homeCubit = context.read<HomeDashboardCubit>();
-
-      AppLocationEntity effectiveCity = homeCubit.state.currentCity;
-      if (effectiveCity == AppLocationEntity.defaultLocation) {
-        final saved = homeCubit.storage.getSelectedCity();
-        if (saved != null) {
-          final rawName = saved['name']?.toString() ?? effectiveCity.name;
-          final normalizedName = rawName.startsWith('Vị trí hiện tại')
-              ? 'Vị trí hiện tại'
-              : rawName;
-          effectiveCity = AppLocationEntity.city(
-            name: normalizedName,
-            province: normalizedName == 'Vị trí hiện tại'
-                ? 'Định vị GPS'
-                : (saved['province']?.toString() ??
-                      (saved['name']?.toString() ?? effectiveCity.province)),
-            latitude:
-                double.tryParse(saved['lat']?.toString() ?? '') ??
-                effectiveCity.latitude,
-            longitude:
-                double.tryParse(saved['lon']?.toString() ?? '') ??
-                effectiveCity.longitude,
-            isGps: normalizedName == 'Vị trí hiện tại',
-          );
-        }
-      }
-
-      final isPermissionGranted = homeCubit.state.isLocationPermissionGranted;
-
+      final locationCubit = context.read<AppLocationCubit>();
+      final effectiveCity = locationCubit.resolveInitialLocation();
+      final isPermissionGranted = locationCubit.state.isLocationPermissionGranted;
       if (isPermissionGranted && effectiveCity.isGps) {
-        mapCubit.setUserGpsLocation(
-          LatLng(effectiveCity.latitude, effectiveCity.longitude),
-        );
+        mapCubit.setUserGpsLocation(LatLng(effectiveCity.latitude, effectiveCity.longitude));
       } else {
         mapCubit.clearUserGpsLocation();
       }
-
       if (isPermissionGranted) {
-        mapCubit.loadUserGpsLocation(
-          fallbackCoords: effectiveCity.isGps
-              ? LatLng(effectiveCity.latitude, effectiveCity.longitude)
-              : null,
-        );
+        mapCubit.loadUserGpsLocation(fallbackCoords: effectiveCity.isGps ? LatLng(effectiveCity.latitude, effectiveCity.longitude) : null);
       }
-
       if (mapCubit.state.stations.isEmpty) {
-        final targetCityName =
-            mapCubit.state.selectedCityName ?? effectiveCity.name;
-        final targetCoords =
-            mapCubit.state.targetLocation ??
-            LatLng(effectiveCity.latitude, effectiveCity.longitude);
-
-        mapCubit
-            .fetchVietnamStations(
-              initialCity: targetCityName,
-              initialCoords: targetCoords,
-            )
-            .then((_) {
-              if (mounted) {
-                if (mapCubit.state.targetLocation != null) {
-                  _safeMove(
-                    mapCubit.state.targetLocation!,
-                    mapCubit.state.targetZoom ?? 12.0,
-                  );
-                } else if (homeCubit.state.hasPendingMapSync) {
-                  _syncWithHomeCity(effectiveCity);
-                  homeCubit.consumeMapSync();
-                }
-              }
-            });
+        final targetCityName = mapCubit.state.selectedCityName ?? effectiveCity.name;
+        final targetCoords = mapCubit.state.targetLocation ?? LatLng(effectiveCity.latitude, effectiveCity.longitude);
+        mapCubit.fetchVietnamStations(initialCity: targetCityName, initialCoords: targetCoords).then((_) {
+          if (mounted) {
+            if (mapCubit.state.targetLocation != null) {
+              _safeMove(mapCubit.state.targetLocation!, mapCubit.state.targetZoom ?? 12.0);
+            } else if (locationCubit.state.hasPendingMapSync) {
+              _syncWithHomeCity(effectiveCity);
+              locationCubit.consumeMapSync();
+            }
+          }
+        });
       } else {
         if (mapCubit.state.targetLocation != null) {
-          _safeMove(
-            mapCubit.state.targetLocation!,
-            mapCubit.state.targetZoom ?? 12.0,
-          );
-        } else if (homeCubit.state.hasPendingMapSync) {
+          _safeMove(mapCubit.state.targetLocation!, mapCubit.state.targetZoom ?? 12.0);
+        } else if (locationCubit.state.hasPendingMapSync) {
           _syncWithHomeCity(effectiveCity);
-          homeCubit.consumeMapSync();
+          locationCubit.consumeMapSync();
         }
       }
     });
@@ -163,11 +115,18 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _moveToCurrentGpsLocation() async {
-    final homeCubit = context.read<HomeDashboardCubit>();
-    await homeCubit.detectGpsLocation();
+    final locationCubit = context.read<AppLocationCubit>();
+    await locationCubit.detectGpsLocation();
     if (!mounted) return;
-    final updatedCity = homeCubit.state.currentCity;
-    _syncWithHomeCity(updatedCity);
+    _syncWithHomeCity(locationCubit.state.currentLocation);
+  }
+
+  MapTileConfig _resolveTileConfig(BuildContext context) {
+    try {
+      return context.read<MapTileConfig>();
+    } catch (_) {
+      return const MapTileConfig.defaults();
+    }
   }
 
   void _safeMove(LatLng latLng, double zoom) {
@@ -218,53 +177,34 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<HomeDashboardCubit, HomeDashboardState>(
+    final tileConfig = _resolveTileConfig(context);
+    return BlocListener<AppLocationCubit, AppLocationState>(
       listenWhen: (prev, curr) {
-        final switchedToMap = prev.currentTab != 1 && curr.currentTab == 1;
-        final cityChanged = prev.currentCity != curr.currentCity;
-        final permissionChanged =
-            prev.isLocationPermissionGranted !=
-            curr.isLocationPermissionGranted;
-        return (switchedToMap && curr.hasPendingMapSync) ||
-            (curr.currentTab == 1 && (cityChanged || permissionChanged));
+        final cityChanged = prev.currentLocation != curr.currentLocation;
+        final permissionChanged = prev.isLocationPermissionGranted != curr.isLocationPermissionGranted;
+        final syncTriggered = !prev.hasPendingMapSync && curr.hasPendingMapSync;
+        return syncTriggered || cityChanged || permissionChanged;
       },
-      listener: (context, homeState) {
+      listener: (context, locState) {
         final mapCubit = context.read<MapCubit>();
-        if (!homeState.isLocationPermissionGranted) {
+        if (!locState.isLocationPermissionGranted) {
           mapCubit.clearUserGpsLocation();
-        } else if (homeState.currentCity.isGps) {
-          mapCubit.setUserGpsLocation(
-            LatLng(
-              homeState.currentCity.latitude,
-              homeState.currentCity.longitude,
-            ),
-          );
+        } else if (locState.currentLocation.isGps) {
+          mapCubit.setUserGpsLocation(LatLng(locState.currentLocation.latitude, locState.currentLocation.longitude));
         }
-
-        final hasActiveMapSelection =
-            mapCubit.state.pickedLocation != null ||
-            mapCubit.state.selectedStation != null;
-
-        if (homeState.hasPendingMapSync ||
-            (mapCubit.state.isHomeSelected && !hasActiveMapSelection)) {
-          _syncWithHomeCity(homeState.currentCity);
+        final hasActiveMapSelection = mapCubit.state.pickedLocation != null || mapCubit.state.selectedStation != null;
+        if (locState.hasPendingMapSync || (mapCubit.state.isHomeSelected && !hasActiveMapSelection)) {
+          _syncWithHomeCity(locState.currentLocation);
         }
-        context.read<HomeDashboardCubit>().consumeMapSync();
+        context.read<AppLocationCubit>().consumeMapSync();
       },
       child: Scaffold(
         backgroundColor: UIColors.bg,
-        body: BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-          buildWhen: (prev, curr) =>
-              prev.currentCity != curr.currentCity ||
-              prev.isLocationPermissionGranted !=
-                  curr.isLocationPermissionGranted,
-          builder: (context, homeState) {
+        body: BlocBuilder<AppLocationCubit, AppLocationState>(
+          buildWhen: (prev, curr) => prev.currentLocation != curr.currentLocation || prev.isLocationPermissionGranted != curr.isLocationPermissionGranted,
+          builder: (context, locState) {
             return BlocConsumer<MapCubit, MapState>(
-              listenWhen: (prev, curr) =>
-                  (curr.targetLocation != null &&
-                      (prev.targetLocation != curr.targetLocation ||
-                          prev.targetZoom != curr.targetZoom)) ||
-                  prev.selectedStation != curr.selectedStation,
+              listenWhen: (prev, curr) => (curr.targetLocation != null && (prev.targetLocation != curr.targetLocation || prev.targetZoom != curr.targetZoom)) || prev.selectedStation != curr.selectedStation,
               listener: (context, state) {
                 if (state.targetLocation != null && state.targetZoom != null) {
                   _safeMove(state.targetLocation!, state.targetZoom!);
@@ -273,45 +213,19 @@ class _MapPageState extends State<MapPage> {
                 if (station != null && !state.isHomeSelected) {
                   final isPicked = station.id.startsWith('picked_');
                   final location = isPicked
-                      ? AppLocationEntity.customPin(
-                          latitude: station.latitude,
-                          longitude: station.longitude,
-                          customName: station.name,
-                          referenceProvince: station.province,
-                          distanceKm: state.pickedDistanceKm,
-                        )
-                      : AppLocationEntity.station(
-                          id: station.id,
-                          name: station.name,
-                          province: station.province,
-                          latitude: station.latitude,
-                          longitude: station.longitude,
-                        );
-                  context.read<HomeDashboardCubit>().syncLocationFromMap(
-                    location,
-                  );
+                      ? AppLocationEntity.customPin(latitude: station.latitude, longitude: station.longitude, customName: station.name, referenceProvince: station.province, distanceKm: state.pickedDistanceKm)
+                      : AppLocationEntity.station(id: station.id, name: station.name, province: station.province, latitude: station.latitude, longitude: station.longitude);
+                  context.read<AppLocationCubit>().syncLocationFromMap(location);
                 }
               },
               builder: (context, state) {
-                if (state.status == MapStatus.loading &&
-                    state.stations.isEmpty) {
-                  return const LoadingWidget(
-                    message: 'Đang tải bản đồ & trạm quan trắc...',
-                  );
+                if (state.status == MapStatus.loading && state.stations.isEmpty) {
+                  return const LoadingWidget(message: 'Đang tải bản đồ & trạm quan trắc...');
                 }
-
                 final filteredStations = state.filteredStations;
-
-                final isPermissionGranted =
-                    homeState.isLocationPermissionGranted;
+                final isPermissionGranted = locState.isLocationPermissionGranted;
                 final userGps = isPermissionGranted
-                    ? (state.userGpsLocation ??
-                          (homeState.currentCity.isGps
-                              ? LatLng(
-                                  homeState.currentCity.latitude,
-                                  homeState.currentCity.longitude,
-                                )
-                              : null))
+                    ? (state.userGpsLocation ?? (locState.currentLocation.isGps ? LatLng(locState.currentLocation.latitude, locState.currentLocation.longitude) : null))
                     : null;
 
                 final markerScale = _calculateMarkerScale(_currentZoom);
@@ -619,7 +533,7 @@ class _MapPageState extends State<MapPage> {
                       height: 28,
                       child: GestureDetector(
                         onTap: () {
-                          _syncWithHomeCity(homeState.currentCity);
+                          _syncWithHomeCity(locState.currentLocation);
                         },
                         child: Center(
                           child: Container(
@@ -823,8 +737,8 @@ class _MapPageState extends State<MapPage> {
                       children: [
                         RepaintBoundary(
                           child: TileLayer(
-                            urlTemplate: EnvConfig.osmTileUrl,
-                            userAgentPackageName: EnvConfig.mapUserAgent,
+                            urlTemplate: tileConfig.urlTemplate,
+                            userAgentPackageName: tileConfig.userAgentPackageName,
                             tileBuilder: darkModeTileBuilder,
                             tileBounds: _vietnamMapBounds,
                           ),
@@ -897,11 +811,11 @@ class _MapPageState extends State<MapPage> {
                           onToggleHeatmap: () =>
                               context.read<MapCubit>().toggleHeatmap(),
                           selectedCityName: state.selectedCityName,
-                          homeCityName: homeState.currentCity.name,
+                          homeCityName: locState.currentLocation.name,
                           isHomeSelected: state.isHomeSelected,
                           selectedQuickCity: state.selectedQuickCity,
                           onSelectHomeCity: () =>
-                              _syncWithHomeCity(homeState.currentCity),
+                              _syncWithHomeCity(locState.currentLocation),
                           quickCities: state.quickCities,
                           onSelectQuickCity: (target) =>
                               context.read<MapCubit>().selectQuickCity(target),
@@ -997,9 +911,7 @@ class _MapPageState extends State<MapPage> {
                             hasPickedLocation: state.pickedLocation != null,
                             onCancelPicker: () {
                               context.read<MapCubit>().clearPickedLocation();
-                              context
-                                  .read<HomeDashboardCubit>()
-                                  .revertToGpsOrHome();
+                              context.read<AppLocationCubit>().revertToGpsOrDefault();
                             },
                             onCurrentLocation: _moveToCurrentGpsLocation,
                             isHomeSelected: state.isHomeSelected,
@@ -1029,9 +941,7 @@ class _MapPageState extends State<MapPage> {
                             activeLayer: state.activeLayer,
                             onClose: () {
                               context.read<MapCubit>().clearSelection();
-                              context
-                                  .read<HomeDashboardCubit>()
-                                  .revertToGpsOrHome();
+                              context.read<AppLocationCubit>().revertToGpsOrDefault();
                             },
                           ),
                         ),

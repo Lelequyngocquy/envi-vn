@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
-import '../../domain/interfaces/i_air_quality_repository.dart';
+import 'package:envivn/src/core/domain/interfaces/i_air_quality_repository.dart';
 import 'air_quality_state.dart';
 
 class AirQualityCubit extends Cubit<AirQualityState> {

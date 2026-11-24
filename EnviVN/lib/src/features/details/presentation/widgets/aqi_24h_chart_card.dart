@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 
 class Aqi24hChartCard extends StatelessWidget {

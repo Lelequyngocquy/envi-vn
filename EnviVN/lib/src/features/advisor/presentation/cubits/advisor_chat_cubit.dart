@@ -2,13 +2,13 @@ import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/domain/entities/app_location_entity.dart';
-import '../../../../core/infrastructure/services/edge_ai_inference_service.dart';
+import '../../../../core/domain/interfaces/i_ai_chat_service.dart';
 import 'advisor_chat_state.dart';
 
 class AdvisorChatCubit extends Cubit<AdvisorChatState> {
   static const int _maxHistoryTurns = 8;
 
-  final EdgeAiInferenceService inferenceService;
+  final IAiChatService inferenceService;
   StreamSubscription<String>? _streamSub;
   Completer<void>? _activeCompleter;
 

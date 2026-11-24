@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
 import 'package:envivn/src/core/domain/entities/base.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/air_quality/domain/interfaces/i_air_quality_repository.dart';
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/domain/interfaces/i_air_quality_repository.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_state.dart';
 

@@ -1,29 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
-class LocationResult {
-  final double latitude;
-  final double longitude;
-  final String? cityName;
-  final bool isDefault;
-  final bool isPermissionDenied;
-  final String? errorMessage;
+import '../../domain/entities/location_result.dart';
+import '../../domain/interfaces/i_location_service.dart';
 
-  const LocationResult({
-    required this.latitude,
-    required this.longitude,
-    this.cityName,
-    this.isDefault = false,
-    this.isPermissionDenied = false,
-    this.errorMessage,
-  });
-}
+export '../../domain/entities/location_result.dart';
 
-class LocationService {
+class LocationService implements ILocationService {
   static const double defaultLat = 21.0285;
   static const double defaultLon = 105.8542;
   static const Duration _lastKnownMaxAge = Duration(minutes: 15);
 
+  @override
   Future<bool> checkPermissionGranted() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -35,6 +23,7 @@ class LocationService {
     }
   }
 
+  @override
   Future<LocationResult> getCurrentLocation() async {
     try {
       LocationPermission permission = await Geolocator.checkPermission();

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
 import 'package:envivn/src/features/details/presentation/widgets/aqi_24h_chart_card.dart';
 
 void main() {

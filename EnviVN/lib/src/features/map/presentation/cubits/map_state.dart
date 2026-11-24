@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/domain/entities/thermal_hotspot_entity.dart';
 import '../../domain/entities/map_layer_type.dart';
 import '../../domain/entities/quick_city_target.dart';
 import '../../domain/entities/station_entity.dart';
-import '../../infrastructure/models/thermal_hotspot_model.dart';
 
 enum MapStatus { initial, loading, success, failure }
 
@@ -29,7 +29,7 @@ class MapState extends Equatable {
   final bool isLoadingPointData;
   final MapLayerType activeLayer;
   final bool isShowedAllVN;
-  final List<ThermalHotspotModel> thermalHotspots;
+  final List<ThermalHotspotEntity> thermalHotspots;
   final bool isLoadingThermal;
   final String? thermalNotice;
   final bool isThermalFromCache;
@@ -104,7 +104,7 @@ class MapState extends Equatable {
     bool? isLoadingPointData,
     MapLayerType? activeLayer,
     bool? isShowedAllVN,
-    List<ThermalHotspotModel>? thermalHotspots,
+    List<ThermalHotspotEntity>? thermalHotspots,
     bool? isLoadingThermal,
     String? thermalNotice,
     bool clearThermalNotice = false,

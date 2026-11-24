@@ -1,6 +1,7 @@
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/features/explore/domain/entities/explore_utility.dart';
+import 'package:envivn/src/features/explore/presentation/extensions/explore_utility_ui_x.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 import 'package:flutter/material.dart';
 

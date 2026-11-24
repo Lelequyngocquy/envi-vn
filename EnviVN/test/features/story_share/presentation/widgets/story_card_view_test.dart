@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:envivn/src/features/story_share/presentation/widgets/story_options_bottom_sheet.dart';
-import 'package:envivn/src/features/air_quality/domain/entities/air_quality_entity.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
 import 'package:envivn/src/core/domain/entities/app_location_entity.dart';
 import 'package:envivn/src/features/story_share/presentation/widgets/story_card_view.dart';
 

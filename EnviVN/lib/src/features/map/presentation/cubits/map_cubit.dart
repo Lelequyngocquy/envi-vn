@@ -2,12 +2,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../common/utils/geo_distance_helper.dart';
+import '../../../../core/domain/entities/air_quality_entity.dart';
 import '../../../../core/domain/entities/app_location_entity.dart';
-import '../../../../core/infrastructure/services/location_service.dart';
-import '../../../air_quality/domain/entities/air_quality_entity.dart';
-import '../../../air_quality/domain/interfaces/i_air_quality_repository.dart';
-import '../../../details/domain/entities/details_entity.dart';
-import '../../../details/domain/interfaces/i_details_repository.dart';
+import '../../../../core/domain/entities/details_entity.dart';
+import '../../../../core/domain/interfaces/i_air_quality_repository.dart';
+import '../../../../core/domain/interfaces/i_details_repository.dart';
+import '../../../../core/domain/interfaces/i_location_service.dart';
 import '../../domain/entities/map_layer_type.dart';
 import '../../domain/entities/quick_city_target.dart';
 import '../../domain/entities/station_entity.dart';
@@ -20,7 +20,7 @@ class MapCubit extends Cubit<MapState> {
   final IMapRepository repository;
   final IDetailsRepository? detailsRepository;
   final IAirQualityRepository? airQualityRepository;
-  final LocationService? locationService;
+  final ILocationService? locationService;
   final INasaFirmsRepository? nasaFirmsRepository;
   int _weatherSeq = 0;
   int _pickSeq = 0;

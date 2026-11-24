@@ -5,10 +5,10 @@ import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_cubit.dart';
 import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_state.dart';
-import 'package:envivn/src/features/home/presentation/widgets/city_selector_sheet.dart';
 import 'package:envivn/src/features/home/presentation/widgets/location_action_panel.dart';
 import 'package:envivn/src/features/home/presentation/widgets/location_radar_illustration.dart';
 import 'package:envivn/src/shared/router/router_key_manager.dart';
+import 'package:envivn/src/shared/widgets/city_selector_sheet.dart';
 
 class LocationPermissionPage extends StatelessWidget {
   final bool isSettings;

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class LocalStorage {
+import '../../../domain/entities/app_location_entity.dart';
+import '../../../domain/interfaces/i_cache_store.dart';
+
+class LocalStorage implements ICacheStore {
   final SharedPreferences prefs;
 
   LocalStorage({required this.prefs});
@@ -33,6 +36,7 @@ class LocalStorage {
     await prefs.setStringList(indexKey, keys);
   }
 
+  @override
   Future<void> saveCachedWeather(
     Map<String, dynamic> data, {
     double? lat,
@@ -50,6 +54,7 @@ class LocalStorage {
     await saveLastUpdateTime();
   }
 
+  @override
   Map<String, dynamic>? getCachedWeather({
     double? lat,
     double? lon,
@@ -57,7 +62,6 @@ class LocalStorage {
   }) {
     final hasCoords = lat != null && lon != null;
     final key = hasCoords ? _weatherKey(lat, lon) : _keyCachedWeather;
-    // Never fall back to global cache when specific coordinates are requested.
     final raw = prefs.getString(key);
     if (raw == null) return null;
     try {
@@ -80,10 +84,12 @@ class LocalStorage {
     }
   }
 
+  @override
   bool isWeatherCacheValid({required double lat, required double lon}) {
     return getCachedWeather(lat: lat, lon: lon, checkTtl: true) != null;
   }
 
+  @override
   Future<void> saveCachedAirQuality(
     Map<String, dynamic> data, {
     double? lat,
@@ -101,6 +107,7 @@ class LocalStorage {
     await saveLastUpdateTime();
   }
 
+  @override
   Map<String, dynamic>? getCachedAirQuality({
     double? lat,
     double? lon,
@@ -108,7 +115,6 @@ class LocalStorage {
   }) {
     final hasCoords = lat != null && lon != null;
     final key = hasCoords ? _aqiKey(lat, lon) : _keyCachedAQI;
-    // Never fall back to global cache when specific coordinates are requested.
     final raw = prefs.getString(key);
     if (raw == null) return null;
     try {
@@ -131,17 +137,29 @@ class LocalStorage {
     }
   }
 
+  @override
   bool isAirQualityCacheValid({required double lat, required double lon}) {
     return getCachedAirQuality(lat: lat, lon: lon, checkTtl: true) != null;
   }
 
-  Future<void> saveSelectedCity(String cityName, double lat, double lon) async {
-    await prefs.setString(
-      _keySelectedCity,
-      jsonEncode({'name': cityName, 'lat': lat, 'lon': lon}),
-    );
+  @override
+  Future<void> saveSelectedLocation(AppLocationEntity location) async {
+    await prefs.setString(_keySelectedCity, jsonEncode(location.toStorageJson()));
   }
 
+  @override
+  AppLocationEntity? getSelectedLocation() {
+    final raw = getSelectedCity();
+    if (raw == null) return null;
+    return AppLocationEntity.fromStorageJson(raw);
+  }
+
+  @override
+  Future<void> saveSelectedCity(String cityName, double lat, double lon) async {
+    await prefs.setString(_keySelectedCity, jsonEncode({'name': cityName, 'lat': lat, 'lon': lon}));
+  }
+
+  @override
   Map<String, dynamic>? getSelectedCity() {
     final raw = prefs.getString(_keySelectedCity);
     if (raw == null) return null;
@@ -152,34 +170,35 @@ class LocalStorage {
     }
   }
 
+  @override
   Future<void> saveLastUpdateTime() async {
     await prefs.setInt(_keyLastUpdate, DateTime.now().millisecondsSinceEpoch);
   }
 
+  @override
   DateTime? getLastUpdateTime() {
     final millis = prefs.getInt(_keyLastUpdate);
     if (millis == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(millis);
   }
 
+  @override
   Future<void> saveLocationPermission(bool isGranted) async {
     await prefs.setBool(_keyLocationPermission, isGranted);
   }
 
+  @override
   bool isLocationPermissionGranted() {
     return prefs.getBool(_keyLocationPermission) ?? false;
   }
 
-  Future<void> saveCachedThermalHotspots(
-    List<Map<String, dynamic>> spots,
-  ) async {
+  @override
+  Future<void> saveCachedThermalHotspots(List<Map<String, dynamic>> spots) async {
     await prefs.setString(_keyCachedThermalHotspots, jsonEncode(spots));
-    await prefs.setInt(
-      _keyThermalLastUpdate,
-      DateTime.now().millisecondsSinceEpoch,
-    );
+    await prefs.setInt(_keyThermalLastUpdate, DateTime.now().millisecondsSinceEpoch);
   }
 
+  @override
   List<Map<String, dynamic>>? getCachedThermalHotspots() {
     final raw = prefs.getString(_keyCachedThermalHotspots);
     if (raw == null) return null;
@@ -191,12 +210,14 @@ class LocalStorage {
     }
   }
 
+  @override
   DateTime? getThermalLastUpdateTime() {
     final millis = prefs.getInt(_keyThermalLastUpdate);
     if (millis == null) return null;
     return DateTime.fromMillisecondsSinceEpoch(millis);
   }
 
+  @override
   Future<void> clearAll() async {
     await prefs.clear();
   }

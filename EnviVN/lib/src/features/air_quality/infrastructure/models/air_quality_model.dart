@@ -1,4 +1,4 @@
-import '../../domain/entities/air_quality_entity.dart';
+import '../../../../core/domain/entities/air_quality_entity.dart';
 
 class AirQualityModel extends AirQualityEntity {
   const AirQualityModel({

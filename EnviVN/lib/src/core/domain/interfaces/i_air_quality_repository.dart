@@ -1,5 +1,5 @@
-import '../../../../core/domain/entities/base.dart';
 import '../entities/air_quality_entity.dart';
+import '../entities/base.dart';
 
 abstract class IAirQualityRepository {
   Future<BaseResult<AirQualityEntity>> getAirQuality({

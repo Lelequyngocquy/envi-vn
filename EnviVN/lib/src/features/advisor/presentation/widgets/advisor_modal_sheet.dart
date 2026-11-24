@@ -4,18 +4,19 @@ import 'package:gap/gap.dart';
 
 import '../../../../common/constants/colors.dart';
 import '../../../../common/utils/weather_code_helper.dart';
-import '../../../../core/di/injection_container.dart';
+import '../../../../core/domain/entities/air_quality_entity.dart';
 import '../../../../core/domain/entities/app_location_entity.dart';
+import '../../../../core/domain/entities/details_entity.dart';
+import '../../../../core/domain/interfaces/i_ai_chat_service.dart';
 import '../../../../core/presentation/widgets/app_bottom_sheet.dart';
 import '../../../../core/presentation/widgets/app_icon.dart';
 import '../../../../core/presentation/widgets/app_text.dart';
-import '../../../air_quality/domain/entities/air_quality_entity.dart';
-import '../../../details/domain/entities/details_entity.dart';
 import '../../domain/entities/quick_prompt_type.dart';
 import '../cubits/advisor_chat_cubit.dart';
 import '../cubits/advisor_chat_state.dart';
 import '../cubits/advisor_cubit.dart';
 import '../cubits/advisor_state.dart';
+import '../extensions/advisor_ui_extensions.dart';
 import 'advisor_result_card.dart';
 import 'ai_chat_conversation_view.dart';
 import 'outdoor_activity_advice_card.dart';
@@ -44,15 +45,8 @@ class AdvisorModalSheet extends StatelessWidget {
     AppLocationEntity? location,
     bool hasRespiratoryCondition = false,
   }) {
-    final resolvedLocation =
-        location ??
-        AppLocationEntity.city(
-          name: cityName ?? 'Vị trí hiện tại',
-          province: cityName ?? 'Việt Nam',
-          latitude: weather.hourlyForecast.isNotEmpty ? 10.7769 : 0.0,
-          longitude: weather.hourlyForecast.isNotEmpty ? 106.7009 : 0.0,
-        );
-
+    final resolvedLocation = location ?? AppLocationEntity.defaultLocation;
+    final chatService = context.read<IAiChatService>();
     return AppBottomSheet.show(
       context,
       title: 'Cố vấn Môi trường',
@@ -63,10 +57,10 @@ class AdvisorModalSheet extends StatelessWidget {
       maxHeightFactor: 0.92,
       child: MultiBlocProvider(
         providers: [
-          BlocProvider(create: (_) => sl<AdvisorCubit>()),
+          BlocProvider(create: (_) => AdvisorCubit()),
           BlocProvider(
             create: (_) {
-              final cubit = sl<AdvisorChatCubit>();
+              final cubit = AdvisorChatCubit(inferenceService: chatService);
               cubit.initChat(location: resolvedLocation);
               return cubit;
             },
@@ -85,14 +79,7 @@ class AdvisorModalSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final resolvedLocation =
-        location ??
-        AppLocationEntity.city(
-          name: cityName ?? 'Vị trí hiện tại',
-          province: cityName ?? 'Việt Nam',
-          latitude: weather.hourlyForecast.isNotEmpty ? 10.7769 : 0.0,
-          longitude: weather.hourlyForecast.isNotEmpty ? 106.7009 : 0.0,
-        );
+    final resolvedLocation = location ?? AppLocationEntity.defaultLocation;
 
     final aqi = airQuality.usAqi > 0 ? airQuality.usAqi : 50;
     final pm25 = airQuality.pm25;

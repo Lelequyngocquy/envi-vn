@@ -2,6 +2,8 @@ import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/common/utils/aqi_helper.dart';
 import 'package:envivn/src/common/utils/date_helper.dart';
 import 'package:envivn/src/common/utils/weather_code_helper.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_cubit.dart';
+import 'package:envivn/src/core/presentation/cubits/app_location_state.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_state.dart';
@@ -15,9 +17,7 @@ import 'package:envivn/src/features/details/presentation/widgets/health_advisory
 import 'package:envivn/src/features/details/presentation/widgets/hourly_details_slider.dart';
 import 'package:envivn/src/features/details/presentation/widgets/seven_day_forecast_card.dart';
 import 'package:envivn/src/features/details/presentation/widgets/twenty_four_hour_temp_chart.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_cubit.dart';
-import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_state.dart';
-import 'package:envivn/src/features/home/presentation/widgets/city_selector_sheet.dart';
+import 'package:envivn/src/shared/widgets/city_selector_sheet.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -27,18 +27,18 @@ import '../../../../shared/widgets/app_button.dart';
 class TwentyFourHourDetailPage extends StatelessWidget {
   const TwentyFourHourDetailPage({super.key});
 
-  void _openCitySelector(BuildContext context, HomeDashboardState state) {
+  void _openCitySelector(BuildContext context, AppLocationState state) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: UIColors.transparent,
       builder: (_) => CitySelectorSheet(
-        currentCity: state.currentCity,
+        currentCity: state.currentLocation,
         onCitySelected: (city) {
-          context.read<HomeDashboardCubit>().changeCity(city);
+          context.read<AppLocationCubit>().selectLocation(city);
         },
         onSelectGps: () {
-          context.read<HomeDashboardCubit>().detectGpsLocation();
+          context.read<AppLocationCubit>().detectGpsLocation();
         },
       ),
     );
@@ -95,32 +95,22 @@ class TwentyFourHourDetailPage extends StatelessWidget {
                                 ),
                               ),
                               const Gap(8),
-                              BlocBuilder<
-                                HomeDashboardCubit,
-                                HomeDashboardState
-                              >(
-                                buildWhen: (prev, curr) =>
-                                    prev.currentCity != curr.currentCity,
-                                builder: (context, homeState) {
+                              BlocBuilder<AppLocationCubit, AppLocationState>(
+                                buildWhen: (prev, curr) => prev.currentLocation != curr.currentLocation,
+                                builder: (context, locationState) {
                                   return GestureDetector(
-                                    onTap: () =>
-                                        _openCitySelector(context, homeState),
+                                    onTap: () => _openCitySelector(context, locationState),
                                     child: AppGlass(
                                       isFixed: true,
                                       borderRadius: 18,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 8,
-                                      ),
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                           ConstrainedBox(
-                                            constraints: const BoxConstraints(
-                                              maxWidth: 160,
-                                            ),
+                                            constraints: const BoxConstraints(maxWidth: 160),
                                             child: AppText.semiBold(
-                                              homeState.currentCity.name,
+                                              locationState.currentLocation.name,
                                               size: 13,
                                               color: UIColors.primaryDark,
                                               maxLines: 1,

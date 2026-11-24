@@ -1,4 +1,4 @@
-import '../../../../core/domain/entities/base.dart';
+import '../entities/base.dart';
 import '../entities/details_entity.dart';
 
 abstract class IDetailsRepository {

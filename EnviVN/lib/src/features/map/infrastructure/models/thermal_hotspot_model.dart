@@ -1,34 +1,21 @@
-/// Satellite thermal anomaly / fire hotspot returned by Backend /api/v1/hotspots.
-class ThermalHotspotModel {
-  final String id;
-  final String locationName;
-  final String province;
-  final double latitude;
-  final double longitude;
-  final double brightnessKelvin;
-  final String fireType;
-  final double confidence;
-  final bool isActiveFire;
-  final String proneSeason;
-  final String? detectedTime;
-  final String description;
+import '../../../../core/domain/entities/thermal_hotspot_entity.dart';
 
+/// Infrastructure DTO mapping Backend /api/v1/hotspots JSON to ThermalHotspotEntity.
+class ThermalHotspotModel extends ThermalHotspotEntity {
   const ThermalHotspotModel({
-    required this.id,
-    required this.locationName,
-    required this.province,
-    required this.latitude,
-    required this.longitude,
-    required this.brightnessKelvin,
-    required this.fireType,
-    required this.confidence,
-    required this.isActiveFire,
-    required this.proneSeason,
-    this.detectedTime,
-    required this.description,
+    required super.id,
+    required super.locationName,
+    required super.province,
+    required super.latitude,
+    required super.longitude,
+    required super.brightnessKelvin,
+    required super.fireType,
+    required super.confidence,
+    required super.isActiveFire,
+    required super.proneSeason,
+    super.detectedTime,
+    required super.description,
   });
-
-  double get brightnessCelsius => brightnessKelvin - 273.15;
 
   Map<String, dynamic> toJson() => {
     'id': id,

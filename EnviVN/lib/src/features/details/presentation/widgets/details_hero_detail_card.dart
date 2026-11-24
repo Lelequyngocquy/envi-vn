@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/common/utils/weather_code_helper.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
-import 'package:envivn/src/features/details/domain/entities/details_entity.dart';
+import 'package:envivn/src/core/domain/entities/details_entity.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 
 class DetailsHeroDetailCard extends StatelessWidget {

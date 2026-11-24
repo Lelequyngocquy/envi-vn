@@ -6,6 +6,7 @@ import 'package:envivn/src/core/presentation/widgets/app_text.dart';
 import 'package:envivn/src/features/advisor/domain/entities/advisor_decision.dart';
 import 'package:envivn/src/features/advisor/domain/entities/advisor_evidence.dart';
 import 'package:envivn/src/features/advisor/domain/entities/quick_prompt_type.dart';
+import 'package:envivn/src/features/advisor/presentation/extensions/advisor_ui_extensions.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 import 'package:gap/gap.dart';
 

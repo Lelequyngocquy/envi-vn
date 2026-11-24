@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gap/gap.dart';
 
 import '../../common/constants/colors.dart';
 import '../../core/presentation/widgets/app_icon.dart';
 import '../../core/presentation/widgets/app_text.dart';
-import '../../features/home/presentation/cubits/home_dashboard_cubit.dart';
 import 'glass.dart';
 
 class AppButton extends StatefulWidget {
@@ -531,11 +529,7 @@ class AppBackButton extends StatelessWidget {
     }
     if (Navigator.of(context).canPop()) {
       Navigator.of(context).pop();
-      return;
     }
-    try {
-      context.read<HomeDashboardCubit>().setTab(0);
-    } catch (_) {}
   }
 
   @override
