@@ -256,8 +256,12 @@ async fn main() {
     let ollama_base_url = std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434".into());
     let ai_model_name = std::env::var("AI_MODEL_NAME").unwrap_or_else(|_| "qwen2.5:3b".into());
     let nasa_api_key = std::env::var("NASA_FIRMS_API_KEY").unwrap_or_else(|_| "aaa04b831a37f75677607b924c5df1de".into());
-    let redis_client = redis::Client::open(format!("redis://{redis_host}:{redis_port}")).ok();
-    let http_client = reqwest::Client::builder().timeout(Duration::from_secs(60)).build().unwrap_or_default();
+    let redis_client = if redis_host.is_empty() || redis_host.eq_ignore_ascii_case("disabled") || redis_host.eq_ignore_ascii_case("none") {
+        None
+    } else {
+        redis::Client::open(format!("redis://{redis_host}:{redis_port}")).ok()
+    };
+    let http_client = reqwest::Client::builder().connect_timeout(Duration::from_secs(10)).timeout(Duration::from_secs(300)).build().unwrap_or_default();
     let clients = Arc::new(ServiceClients {
         http_client,
         redis_client,
