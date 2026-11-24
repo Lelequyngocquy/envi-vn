@@ -54,83 +54,127 @@ void main() {
 
   setUp(() async {
     EnvConfig.reset();
-    EnvConfig.loadFromString('BACKEND_BASE_URL=http://localhost:8080\nCLIENT_API_KEY=key-abc');
+    EnvConfig.loadFromString(
+      'BACKEND_BASE_URL=http://localhost:8080\nCLIENT_API_KEY=key-abc',
+    );
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
     storage = LocalStorage(prefs: prefs);
   });
 
   group('NasaFirmsRepository Backend Thin Client Tests', () {
-    test('fetches hotspots JSON from Backend /api/v1/hotspots and caches locally', () async {
-      int requestCount = 0;
-      Uri? capturedUri;
-      String? capturedKey;
-      final mockClient = MockClient((request) async {
-        requestCount++;
-        capturedUri = request.url;
-        capturedKey = request.headers['x-api-key'];
-        return http.Response(sampleBackendResponse, 200, headers: {'content-type': 'application/json; charset=utf-8'});
-      });
-      final repository = NasaFirmsRepository(client: mockClient, storage: storage);
-      final result = await repository.getVietnamActiveFires();
-      expect(result.isSuccess, isTrue);
-      expect(result.data?.length, 2);
-      expect(requestCount, 1);
-      expect(capturedUri.toString(), 'http://localhost:8080/api/v1/hotspots?force=false');
-      expect(capturedKey, 'key-abc');
-      final hotGiaLai = result.data!.firstWhere((s) => s.province == 'Gia Lai');
-      expect(hotGiaLai.confidence, 95.0);
-      expect(hotGiaLai.latitude, 14.025);
-      expect(hotGiaLai.isActiveFire, isTrue);
-      expect(hotGiaLai.detectedTime, contains('13:29'));
-      expect(storage.getCachedThermalHotspots()?.length, 2);
-    });
+    test(
+      'fetches hotspots JSON from Backend /api/v1/hotspots and caches locally',
+      () async {
+        int requestCount = 0;
+        Uri? capturedUri;
+        String? capturedKey;
+        final mockClient = MockClient((request) async {
+          requestCount++;
+          capturedUri = request.url;
+          capturedKey = request.headers['x-api-key'];
+          return http.Response(
+            sampleBackendResponse,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        });
+        final repository = NasaFirmsRepository(
+          client: mockClient,
+          storage: storage,
+        );
+        final result = await repository.getVietnamActiveFires();
+        expect(result.isSuccess, isTrue);
+        expect(result.data?.length, 2);
+        expect(requestCount, 1);
+        expect(
+          capturedUri.toString(),
+          'http://localhost:8080/api/v1/hotspots?force=false',
+        );
+        expect(capturedKey, 'key-abc');
+        final hotGiaLai = result.data!.firstWhere(
+          (s) => s.province == 'Gia Lai',
+        );
+        expect(hotGiaLai.confidence, 95.0);
+        expect(hotGiaLai.latitude, 14.025);
+        expect(hotGiaLai.isActiveFire, isTrue);
+        expect(hotGiaLai.detectedTime, contains('13:29'));
+        expect(storage.getCachedThermalHotspots()?.length, 2);
+      },
+    );
 
-    test('serves from 15-minute TTL cache without sending HTTP request until forceRefresh', () async {
-      int requestCount = 0;
-      final mockClient = MockClient((request) async {
-        requestCount++;
-        return http.Response(sampleBackendResponse, 200, headers: {'content-type': 'application/json; charset=utf-8'});
-      });
-      final repository = NasaFirmsRepository(client: mockClient, storage: storage);
-      await repository.getVietnamActiveFires();
-      expect(requestCount, 1);
-      final cachedResult = await repository.getVietnamActiveFires();
-      expect(cachedResult.isSuccess, isTrue);
-      expect(cachedResult.data!.length, 2);
-      expect(requestCount, 1);
-      final forcedResult = await repository.getVietnamActiveFires(forceRefresh: true);
-      expect(forcedResult.isSuccess, isTrue);
-      expect(requestCount, 2);
-    });
+    test(
+      'serves from 15-minute TTL cache without sending HTTP request until forceRefresh',
+      () async {
+        int requestCount = 0;
+        final mockClient = MockClient((request) async {
+          requestCount++;
+          return http.Response(
+            sampleBackendResponse,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
+        });
+        final repository = NasaFirmsRepository(
+          client: mockClient,
+          storage: storage,
+        );
+        await repository.getVietnamActiveFires();
+        expect(requestCount, 1);
+        final cachedResult = await repository.getVietnamActiveFires();
+        expect(cachedResult.isSuccess, isTrue);
+        expect(cachedResult.data!.length, 2);
+        expect(requestCount, 1);
+        final forcedResult = await repository.getVietnamActiveFires(
+          forceRefresh: true,
+        );
+        expect(forcedResult.isSuccess, isTrue);
+        expect(requestCount, 2);
+      },
+    );
 
     test('falls back to stale real cache on HTTP 429 rate limit', () async {
       int requestCount = 0;
       final mockClient = MockClient((request) async {
         requestCount++;
         if (requestCount == 1) {
-          return http.Response(sampleBackendResponse, 200, headers: {'content-type': 'application/json; charset=utf-8'});
+          return http.Response(
+            sampleBackendResponse,
+            200,
+            headers: {'content-type': 'application/json; charset=utf-8'},
+          );
         }
         return http.Response('Rate limit exceeded', 429);
       });
-      final repository = NasaFirmsRepository(client: mockClient, storage: storage);
+      final repository = NasaFirmsRepository(
+        client: mockClient,
+        storage: storage,
+      );
       await repository.getVietnamActiveFires();
       expect(repository.isServingCachedData, isFalse);
-      final result429 = await repository.getVietnamActiveFires(forceRefresh: true);
+      final result429 = await repository.getVietnamActiveFires(
+        forceRefresh: true,
+      );
       expect(result429.isSuccess, isTrue);
       expect(result429.data!.length, 2);
       expect(repository.isServingCachedData, isTrue);
       expect(result429.message, contains('giới hạn tần suất'));
     });
 
-    test('returns failure with empty list when storage is empty and network fails', () async {
-      final mockClient = MockClient((request) async {
-        throw http.ClientException('Connection refused', request.url);
-      });
-      final repository = NasaFirmsRepository(client: mockClient, storage: storage);
-      final result = await repository.getVietnamActiveFires();
-      expect(result.isSuccess, isFalse);
-      expect(result.data, isEmpty);
-    });
+    test(
+      'returns failure with empty list when storage is empty and network fails',
+      () async {
+        final mockClient = MockClient((request) async {
+          throw http.ClientException('Connection refused', request.url);
+        });
+        final repository = NasaFirmsRepository(
+          client: mockClient,
+          storage: storage,
+        );
+        final result = await repository.getVietnamActiveFires();
+        expect(result.isSuccess, isFalse);
+        expect(result.data, isEmpty);
+      },
+    );
   });
 }

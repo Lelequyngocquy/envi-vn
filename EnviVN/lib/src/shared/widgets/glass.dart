@@ -56,15 +56,15 @@ class AppGlass extends StatelessWidget {
     } else {
       final innerBox = Container(
         decoration: BoxDecoration(
-          color: color ?? UIColors.cardBg.withOpacity(0.85),
+          color: color ?? UIColors.cardBg.withValues(alpha: 0.85),
           borderRadius: BorderRadius.circular(borderRadius),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              UIColors.white.withOpacity(0.12),
-              UIColors.white.withOpacity(0.03),
-              UIColors.white.withOpacity(0.06),
+              UIColors.white.withValues(alpha: 0.12),
+              UIColors.white.withValues(alpha: 0.03),
+              UIColors.white.withValues(alpha: 0.06),
             ],
             stops: const [0.0, 0.45, 1.0],
           ),

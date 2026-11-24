@@ -10,49 +10,56 @@ enum ExploreUtility {
     subtitle: 'Tiện ích 2x2 & 4x2 theo dõi AQI trực tiếp ngoài màn hình',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Widget Màn hình chính',
-    futureSubtitle: 'Tiện ích màn hình chính WidgetKit (iOS) và Glance (Android) đang được hoàn thiện để cập nhật AQI mỗi 30 phút.',
+    futureSubtitle:
+        'Tiện ích màn hình chính WidgetKit (iOS) và Glance (Android) đang được hoàn thiện để cập nhật AQI mỗi 30 phút.',
   ),
   morningReport(
     title: 'Bản tin 06:30 sáng',
     subtitle: 'Thông báo định kỳ nhắc nhở chỉ số không khí đầu ngày',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Thông báo Cục bộ 06:30 Sáng',
-    futureSubtitle: 'Lên lịch thông báo không cần Internet, nhắc nhở đeo khẩu trang và tóm tắt chỉ số AQI trước khi đi làm.',
+    futureSubtitle:
+        'Lên lịch thông báo không cần Internet, nhắc nhở đeo khẩu trang và tóm tắt chỉ số AQI trước khi đi làm.',
   ),
   environmentalReport(
     title: 'Báo cáo môi trường',
     subtitle: 'Xuất dữ liệu quan trắc định dạng file PDF và CSV',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Xuất Báo cáo Môi trường',
-    futureSubtitle: 'Công cụ tổng hợp biểu đồ diễn biến nồng độ và xuất bản báo cáo phân tích chất lượng không khí.',
+    futureSubtitle:
+        'Công cụ tổng hợp biểu đồ diễn biến nồng độ và xuất bản báo cáo phân tích chất lượng không khí.',
   ),
   healthProfile(
     title: 'Hồ sơ sức khỏe',
     subtitle: 'Cá nhân hóa cảnh báo cho người hen suyễn, trẻ em',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Hồ sơ Sức khỏe Cá nhân',
-    futureSubtitle: 'Thiết lập cảnh báo chuyên biệt theo tình trạng thể chất và bệnh lý hô hấp của bạn và người thân.',
+    futureSubtitle:
+        'Thiết lập cảnh báo chuyên biệt theo tình trạng thể chất và bệnh lý hô hấp của bạn và người thân.',
   ),
   nasaRadar(
     title: 'Radar nhiệt NASA',
     subtitle: 'Phân tích điểm phát xạ nhiệt theo chu kỳ vệ tinh NOAA',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Radar Dị thường nhiệt NASA',
-    futureSubtitle: 'Hệ thống quét vệ tinh thời gian thực phát hiện các điểm nhiệt độ bề mặt cao trên toàn quốc.',
+    futureSubtitle:
+        'Hệ thống quét vệ tinh thời gian thực phát hiện các điểm nhiệt độ bề mặt cao trên toàn quốc.',
   ),
   monitoringHistory(
     title: 'Lịch sử quan trắc',
     subtitle: 'Truy xuất biến động chất lượng không khí 30 ngày qua',
     badgeText: 'SẮP CÓ',
     futureTitle: 'Lịch sử Quan trắc 30 Ngày',
-    futureSubtitle: 'Dữ liệu lưu trữ cục bộ đối chiếu xu hướng ô nhiễm theo tuần và tháng.',
+    futureSubtitle:
+        'Dữ liệu lưu trữ cục bộ đối chiếu xu hướng ô nhiễm theo tuần và tháng.',
   ),
   multiPointCompare(
     title: 'So sánh đa điểm',
     subtitle: 'So sánh chỉ số ô nhiễm giữa các thành phố',
     badgeText: 'SẮP CÓ',
     futureTitle: 'So sánh Chất lượng Không khí',
-    futureSubtitle: 'Công cụ so sánh song song các chỉ số ô nhiễm giữa 2 hoặc nhiều tỉnh thành trên cả nước.',
+    futureSubtitle:
+        'Công cụ so sánh song song các chỉ số ô nhiễm giữa 2 hoặc nhiều tỉnh thành trên cả nước.',
   );
 
   final String title;

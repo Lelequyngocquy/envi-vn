@@ -29,8 +29,16 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
     ILocationService? locationService,
     required this.detailsCubit,
     required this.airQualityCubit,
-  }) : assert(appLocationCubit != null || (storage != null && locationService != null)),
-       _locationCubit = appLocationCubit ?? AppLocationCubit(cacheStore: storage!, locationService: locationService!),
+  }) : assert(
+         appLocationCubit != null ||
+             (storage != null && locationService != null),
+       ),
+       _locationCubit =
+           appLocationCubit ??
+           AppLocationCubit(
+             cacheStore: storage!,
+             locationService: locationService!,
+           ),
        _ownsLocationCubit = appLocationCubit == null,
        super(const HomeDashboardState()) {
     _lastMirroredLocation = _locationCubit.state.currentLocation;
@@ -72,14 +80,23 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       state.copyWith(
         currentCity: targetCity,
         lastUpdated: _locationCubit.state.lastUpdated ?? DateTime.now(),
-        isLocationPermissionGranted: _locationCubit.state.isLocationPermissionGranted,
+        isLocationPermissionGranted:
+            _locationCubit.state.isLocationPermissionGranted,
       ),
     );
     await _fetchDataForCity(targetCity);
   }
 
   Future<void> changeCity(AppLocationEntity city) async {
-    emit(state.copyWith(status: DashboardStatus.loading, isChangingLocation: true, currentCity: city, hasPendingMapSync: true, clearNotice: true));
+    emit(
+      state.copyWith(
+        status: DashboardStatus.loading,
+        isChangingLocation: true,
+        currentCity: city,
+        hasPendingMapSync: true,
+        clearNotice: true,
+      ),
+    );
     _suppressLocationFetch = true;
     try {
       await _locationCubit.selectLocation(city, syncToMap: true);
@@ -93,7 +110,15 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
 
   Future<void> syncLocationFromMap(AppLocationEntity location) async {
     if (state.currentCity == location) return;
-    emit(state.copyWith(status: DashboardStatus.loading, isChangingLocation: false, currentCity: location, hasPendingMapSync: false, clearNotice: true));
+    emit(
+      state.copyWith(
+        status: DashboardStatus.loading,
+        isChangingLocation: false,
+        currentCity: location,
+        hasPendingMapSync: false,
+        clearNotice: true,
+      ),
+    );
     _suppressLocationFetch = true;
     try {
       await _locationCubit.syncLocationFromMap(location);
@@ -119,7 +144,8 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
   }
 
   Future<void> revertToGpsOrHome() async {
-    final isGranted = await _locationCubit.locationService.checkPermissionGranted();
+    final isGranted = await _locationCubit.locationService
+        .checkPermissionGranted();
     if (isClosed) return;
     if (isGranted) {
       await detectGpsLocation();
@@ -151,22 +177,51 @@ class HomeDashboardCubit extends Cubit<HomeDashboardState> {
       ]);
       if (isClosed || seq != _fetchSeq) return;
       final detailsFailed = detailsCubit.state.status == DetailsStatus.failure;
-      final aqiFailed = airQualityCubit.state.status == AirQualityStatus.failure;
+      final aqiFailed =
+          airQualityCubit.state.status == AirQualityStatus.failure;
       if (detailsFailed && aqiFailed) {
-        _locationCubit.failLocationChange('Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.');
-        emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.'));
+        _locationCubit.failLocationChange(
+          'Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.',
+        );
+        emit(
+          state.copyWith(
+            status: DashboardStatus.failure,
+            isChangingLocation: false,
+            noticeMessage:
+                'Không thể tải dữ liệu thời tiết và không khí. Vui lòng thử lại.',
+          ),
+        );
         return;
       }
       final aqi = airQualityCubit.state.airQuality.usAqi;
       final details = detailsCubit.state.details;
-      final hasAlert = aqi > 100 || details.uvIndex >= 8 || (details.hourlyForecast.isNotEmpty && details.hourlyForecast.first.precipitationProbability >= 50);
+      final hasAlert =
+          aqi > 100 ||
+          details.uvIndex >= 8 ||
+          (details.hourlyForecast.isNotEmpty &&
+              details.hourlyForecast.first.precipitationProbability >= 50);
       final now = DateTime.now();
       _locationCubit.finishLocationChange(updatedAt: now);
-      emit(state.copyWith(status: DashboardStatus.success, isChangingLocation: false, lastUpdated: now, hasNotification: hasAlert));
+      emit(
+        state.copyWith(
+          status: DashboardStatus.success,
+          isChangingLocation: false,
+          lastUpdated: now,
+          hasNotification: hasAlert,
+        ),
+      );
     } catch (_) {
       if (isClosed || seq != _fetchSeq) return;
-      _locationCubit.failLocationChange('Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.');
-      emit(state.copyWith(status: DashboardStatus.failure, isChangingLocation: false, noticeMessage: 'Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.'));
+      _locationCubit.failLocationChange(
+        'Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.',
+      );
+      emit(
+        state.copyWith(
+          status: DashboardStatus.failure,
+          isChangingLocation: false,
+          noticeMessage: 'Không thể tải dữ liệu vị trí mới. Vui lòng thử lại.',
+        ),
+      );
     }
   }
 

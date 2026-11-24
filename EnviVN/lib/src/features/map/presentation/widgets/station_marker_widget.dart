@@ -126,7 +126,7 @@ class StationMarkerWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: badgeColor.withOpacity(0.65),
+                color: badgeColor.withValues(alpha: 0.65),
                 blurRadius: isSelected ? 12 : 6,
                 offset: const Offset(0, 2),
               ),

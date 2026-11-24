@@ -30,7 +30,8 @@ class AppLocationState extends Equatable {
   }) {
     return AppLocationState(
       currentLocation: currentLocation ?? this.currentLocation,
-      isLocationPermissionGranted: isLocationPermissionGranted ?? this.isLocationPermissionGranted,
+      isLocationPermissionGranted:
+          isLocationPermissionGranted ?? this.isLocationPermissionGranted,
       isChangingLocation: isChangingLocation ?? this.isChangingLocation,
       hasPendingMapSync: hasPendingMapSync ?? this.hasPendingMapSync,
       noticeMessage: clearNotice ? null : (noticeMessage ?? this.noticeMessage),
@@ -39,5 +40,12 @@ class AppLocationState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [currentLocation, isLocationPermissionGranted, isChangingLocation, hasPendingMapSync, noticeMessage, lastUpdated];
+  List<Object?> get props => [
+    currentLocation,
+    isLocationPermissionGranted,
+    isChangingLocation,
+    hasPendingMapSync,
+    noticeMessage,
+    lastUpdated,
+  ];
 }

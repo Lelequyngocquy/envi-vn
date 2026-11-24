@@ -45,7 +45,11 @@ class NetworkLogger {
     } catch (_) {}
   }
 
-  static String _prettyJson(dynamic raw, {int maxLines = 12, int maxChars = 350}) {
+  static String _prettyJson(
+    dynamic raw, {
+    int maxLines = 12,
+    int maxChars = 350,
+  }) {
     if (raw == null) return 'null';
     String formatted;
     try {
@@ -53,7 +57,9 @@ class NetworkLogger {
         formatted = const JsonEncoder.withIndent('  ').convert(raw);
       } else if (raw is String) {
         try {
-          formatted = const JsonEncoder.withIndent('  ').convert(jsonDecode(raw));
+          formatted = const JsonEncoder.withIndent(
+            '  ',
+          ).convert(jsonDecode(raw));
         } catch (_) {
           formatted = raw;
         }

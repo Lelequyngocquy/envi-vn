@@ -33,8 +33,12 @@ class AppLocationEntity extends Equatable {
   bool get isStation => originType == LocationOriginType.monitoringStation;
 
   String get formattedSubtitle {
-    if (isCustomPin && distanceToNearestProvinceKm != null && referenceProvinceName != null) {
-      final distStr = distanceToNearestProvinceKm! < 10.0 ? distanceToNearestProvinceKm!.toStringAsFixed(1) : distanceToNearestProvinceKm!.toStringAsFixed(0);
+    if (isCustomPin &&
+        distanceToNearestProvinceKm != null &&
+        referenceProvinceName != null) {
+      final distStr = distanceToNearestProvinceKm! < 10.0
+          ? distanceToNearestProvinceKm!.toStringAsFixed(1)
+          : distanceToNearestProvinceKm!.toStringAsFixed(0);
       return 'Cách ~$distStr km từ $referenceProvinceName';
     }
     return provinceOrRegion;
@@ -65,12 +69,18 @@ class AppLocationEntity extends Equatable {
     bool isGps = false,
   }) {
     return AppLocationEntity(
-      id: id ?? (isGps ? 'gps_saved' : 'city_${name.toLowerCase().replaceAll(' ', '_')}'),
+      id:
+          id ??
+          (isGps
+              ? 'gps_saved'
+              : 'city_${name.toLowerCase().replaceAll(' ', '_')}'),
       displayName: name,
       provinceOrRegion: province,
       latitude: latitude,
       longitude: longitude,
-      originType: isGps ? LocationOriginType.gps : LocationOriginType.popularCity,
+      originType: isGps
+          ? LocationOriginType.gps
+          : LocationOriginType.popularCity,
     );
   }
 
@@ -100,8 +110,18 @@ class AppLocationEntity extends Equatable {
     String? referenceProvince,
     double? distanceKm,
   }) {
-    final distStr = distanceKm != null ? (distanceKm < 10.0 ? distanceKm.toStringAsFixed(1) : distanceKm.toStringAsFixed(0)) : '';
-    final name = customName ?? (referenceProvince != null && referenceProvince.isNotEmpty && distStr.isNotEmpty ? 'Điểm ghim (~$distStr km từ $referenceProvince)' : 'Điểm ghim (${latitude.toStringAsFixed(3)}, ${longitude.toStringAsFixed(3)})');
+    final distStr = distanceKm != null
+        ? (distanceKm < 10.0
+              ? distanceKm.toStringAsFixed(1)
+              : distanceKm.toStringAsFixed(0))
+        : '';
+    final name =
+        customName ??
+        (referenceProvince != null &&
+                referenceProvince.isNotEmpty &&
+                distStr.isNotEmpty
+            ? 'Điểm ghim (~$distStr km từ $referenceProvince)'
+            : 'Điểm ghim (${latitude.toStringAsFixed(3)}, ${longitude.toStringAsFixed(3)})');
     return AppLocationEntity(
       id: 'custom_${latitude.toStringAsFixed(4)}_${longitude.toStringAsFixed(4)}',
       displayName: name,
@@ -121,17 +141,29 @@ class AppLocationEntity extends Equatable {
     'lat': latitude,
     'lon': longitude,
     'originType': originType.name,
-    if (distanceToNearestProvinceKm != null) 'distanceKm': distanceToNearestProvinceKm,
-    if (referenceProvinceName != null) 'referenceProvince': referenceProvinceName,
+    if (distanceToNearestProvinceKm != null)
+      'distanceKm': distanceToNearestProvinceKm,
+    if (referenceProvinceName != null)
+      'referenceProvince': referenceProvinceName,
   };
 
   /// Reconstructs full location metadata from storage JSON (compatible with legacy {name, lat, lon}).
   factory AppLocationEntity.fromStorageJson(Map<String, dynamic> json) {
     final rawName = json['name']?.toString() ?? defaultLocation.displayName;
-    final lat = (json['lat'] as num?)?.toDouble() ?? double.tryParse(json['lat']?.toString() ?? '') ?? defaultLocation.latitude;
-    final lon = (json['lon'] as num?)?.toDouble() ?? double.tryParse(json['lon']?.toString() ?? '') ?? defaultLocation.longitude;
+    final lat =
+        (json['lat'] as num?)?.toDouble() ??
+        double.tryParse(json['lat']?.toString() ?? '') ??
+        defaultLocation.latitude;
+    final lon =
+        (json['lon'] as num?)?.toDouble() ??
+        double.tryParse(json['lon']?.toString() ?? '') ??
+        defaultLocation.longitude;
     final rawOrigin = json['originType']?.toString();
-    final parsedOrigin = rawOrigin != null ? LocationOriginType.values.where((o) => o.name == rawOrigin).firstOrNull : null;
+    final parsedOrigin = rawOrigin != null
+        ? LocationOriginType.values
+              .where((o) => o.name == rawOrigin)
+              .firstOrNull
+        : null;
     if (parsedOrigin != null && json['id'] is String) {
       return AppLocationEntity(
         id: json['id'] as String,
@@ -144,9 +176,16 @@ class AppLocationEntity extends Equatable {
         referenceProvinceName: json['referenceProvince']?.toString(),
       );
     }
-    final normalizedName = rawName.startsWith('Vị trí hiện tại') ? 'Vị trí hiện tại' : rawName;
+    final normalizedName = rawName.startsWith('Vị trí hiện tại')
+        ? 'Vị trí hiện tại'
+        : rawName;
     if (rawName.startsWith('Điểm ghim')) {
-      return AppLocationEntity.customPin(latitude: lat, longitude: lon, customName: rawName, referenceProvince: json['province']?.toString());
+      return AppLocationEntity.customPin(
+        latitude: lat,
+        longitude: lon,
+        customName: rawName,
+        referenceProvince: json['province']?.toString(),
+      );
     }
     if (normalizedName == 'Vị trí hiện tại') {
       return AppLocationEntity.gps(latitude: lat, longitude: lon);
@@ -168,7 +207,8 @@ class AppLocationEntity extends Equatable {
     originType: LocationOriginType.popularCity,
   );
 
-  static List<AppLocationEntity> get popularLocations => PopularLocation.values.map((loc) => loc.toEntity()).toList();
+  static List<AppLocationEntity> get popularLocations =>
+      PopularLocation.values.map((loc) => loc.toEntity()).toList();
 
   AppLocationEntity copyWith({
     String? id,
@@ -189,13 +229,26 @@ class AppLocationEntity extends Equatable {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       originType: originType ?? this.originType,
-      distanceToNearestProvinceKm: clearDistance ? null : (distanceToNearestProvinceKm ?? this.distanceToNearestProvinceKm),
-      referenceProvinceName: clearReferenceProvince ? null : (referenceProvinceName ?? this.referenceProvinceName),
+      distanceToNearestProvinceKm: clearDistance
+          ? null
+          : (distanceToNearestProvinceKm ?? this.distanceToNearestProvinceKm),
+      referenceProvinceName: clearReferenceProvince
+          ? null
+          : (referenceProvinceName ?? this.referenceProvinceName),
     );
   }
 
   @override
-  List<Object?> get props => [id, displayName, provinceOrRegion, latitude, longitude, originType, distanceToNearestProvinceKm, referenceProvinceName];
+  List<Object?> get props => [
+    id,
+    displayName,
+    provinceOrRegion,
+    latitude,
+    longitude,
+    originType,
+    distanceToNearestProvinceKm,
+    referenceProvinceName,
+  ];
 }
 
 extension PopularLocationEntityX on PopularLocation {

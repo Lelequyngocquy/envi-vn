@@ -10,10 +10,8 @@ class AppLocationCubit extends Cubit<AppLocationState> {
   final ICacheStore cacheStore;
   final ILocationService locationService;
 
-  AppLocationCubit({
-    required this.cacheStore,
-    required this.locationService,
-  }) : super(const AppLocationState());
+  AppLocationCubit({required this.cacheStore, required this.locationService})
+    : super(const AppLocationState());
 
   bool get hasSavedLocation => cacheStore.getSelectedCity() != null;
 
@@ -25,7 +23,8 @@ class AppLocationCubit extends Cubit<AppLocationState> {
   }
 
   Future<AppLocationEntity> initLocation() async {
-    AppLocationEntity target = cacheStore.getSelectedLocation() ?? AppLocationEntity.defaultLocation;
+    AppLocationEntity target =
+        cacheStore.getSelectedLocation() ?? AppLocationEntity.defaultLocation;
     final isGrantedInOs = await locationService.checkPermissionGranted();
     if (isClosed) return target;
     if (!isGrantedInOs && cacheStore.isLocationPermissionGranted()) {
@@ -33,34 +32,65 @@ class AppLocationCubit extends Cubit<AppLocationState> {
     } else if (isGrantedInOs && !cacheStore.isLocationPermissionGranted()) {
       await cacheStore.saveLocationPermission(true);
     }
-    if ((target.isGps || target.name.startsWith('Vị trí hiện tại')) && !isGrantedInOs) {
+    if ((target.isGps || target.name.startsWith('Vị trí hiện tại')) &&
+        !isGrantedInOs) {
       target = AppLocationEntity.defaultLocation;
       await cacheStore.saveSelectedLocation(target);
     }
     if (isClosed) return target;
-    emit(state.copyWith(currentLocation: target, lastUpdated: cacheStore.getLastUpdateTime() ?? DateTime.now(), isLocationPermissionGranted: isGrantedInOs));
+    emit(
+      state.copyWith(
+        currentLocation: target,
+        lastUpdated: cacheStore.getLastUpdateTime() ?? DateTime.now(),
+        isLocationPermissionGranted: isGrantedInOs,
+      ),
+    );
     return target;
   }
 
-  Future<void> selectLocation(AppLocationEntity location, {bool syncToMap = true}) async {
+  Future<void> selectLocation(
+    AppLocationEntity location, {
+    bool syncToMap = true,
+  }) async {
     if (isClosed) return;
-    emit(state.copyWith(currentLocation: location, isChangingLocation: true, hasPendingMapSync: syncToMap, clearNotice: true));
+    emit(
+      state.copyWith(
+        currentLocation: location,
+        isChangingLocation: true,
+        hasPendingMapSync: syncToMap,
+        clearNotice: true,
+      ),
+    );
     try {
       await cacheStore.saveSelectedLocation(location);
     } catch (_) {
       if (isClosed) return;
-      emit(state.copyWith(isChangingLocation: false, noticeMessage: 'Không thể lưu khu vực đã chọn.'));
+      emit(
+        state.copyWith(
+          isChangingLocation: false,
+          noticeMessage: 'Không thể lưu khu vực đã chọn.',
+        ),
+      );
     }
   }
 
   Future<void> syncLocationFromMap(AppLocationEntity location) async {
     if (isClosed || state.currentLocation == location) return;
-    emit(state.copyWith(currentLocation: location, isChangingLocation: false, hasPendingMapSync: false, clearNotice: true));
+    emit(
+      state.copyWith(
+        currentLocation: location,
+        isChangingLocation: false,
+        hasPendingMapSync: false,
+        clearNotice: true,
+      ),
+    );
     try {
       await cacheStore.saveSelectedLocation(location);
     } catch (_) {
       if (isClosed) return;
-      emit(state.copyWith(noticeMessage: 'Không thể đồng bộ vị trí từ bản đồ.'));
+      emit(
+        state.copyWith(noticeMessage: 'Không thể đồng bộ vị trí từ bản đồ.'),
+      );
     }
   }
 
@@ -68,7 +98,13 @@ class AppLocationCubit extends Cubit<AppLocationState> {
     try {
       final isGranted = await locationService.checkPermissionGranted();
       if (isClosed) return null;
-      emit(state.copyWith(isChangingLocation: true, noticeMessage: isGranted ? null : 'Quyền truy cập vị trí đang bị tắt', clearNotice: isGranted));
+      emit(
+        state.copyWith(
+          isChangingLocation: true,
+          noticeMessage: isGranted ? null : 'Quyền truy cập vị trí đang bị tắt',
+          clearNotice: isGranted,
+        ),
+      );
       final locationResult = await locationService.getCurrentLocation();
       if (isClosed) return null;
       if (locationResult.isDefault || locationResult.isPermissionDenied) {
@@ -76,18 +112,42 @@ class AppLocationCubit extends Cubit<AppLocationState> {
         final defaultCity = AppLocationEntity.defaultLocation;
         await cacheStore.saveSelectedLocation(defaultCity);
         if (isClosed) return defaultCity;
-        emit(state.copyWith(currentLocation: defaultCity, isLocationPermissionGranted: false, hasPendingMapSync: true, noticeMessage: locationResult.errorMessage, clearNotice: locationResult.errorMessage == null));
+        emit(
+          state.copyWith(
+            currentLocation: defaultCity,
+            isLocationPermissionGranted: false,
+            hasPendingMapSync: true,
+            noticeMessage: locationResult.errorMessage,
+            clearNotice: locationResult.errorMessage == null,
+          ),
+        );
         return defaultCity;
       }
-      final gpsCity = AppLocationEntity.gps(latitude: locationResult.latitude, longitude: locationResult.longitude, displayName: 'Vị trí hiện tại');
+      final gpsCity = AppLocationEntity.gps(
+        latitude: locationResult.latitude,
+        longitude: locationResult.longitude,
+        displayName: 'Vị trí hiện tại',
+      );
       await cacheStore.saveLocationPermission(true);
       await cacheStore.saveSelectedLocation(gpsCity);
       if (isClosed) return gpsCity;
-      emit(state.copyWith(currentLocation: gpsCity, isLocationPermissionGranted: true, hasPendingMapSync: true, clearNotice: true));
+      emit(
+        state.copyWith(
+          currentLocation: gpsCity,
+          isLocationPermissionGranted: true,
+          hasPendingMapSync: true,
+          clearNotice: true,
+        ),
+      );
       return gpsCity;
     } catch (_) {
       if (isClosed) return null;
-      emit(state.copyWith(isChangingLocation: false, noticeMessage: 'Không thể xác định vị trí GPS lúc này.'));
+      emit(
+        state.copyWith(
+          isChangingLocation: false,
+          noticeMessage: 'Không thể xác định vị trí GPS lúc này.',
+        ),
+      );
       return null;
     }
   }
@@ -118,7 +178,12 @@ class AppLocationCubit extends Cubit<AppLocationState> {
 
   void finishLocationChange({DateTime? updatedAt}) {
     if (isClosed) return;
-    emit(state.copyWith(isChangingLocation: false, lastUpdated: updatedAt ?? DateTime.now()));
+    emit(
+      state.copyWith(
+        isChangingLocation: false,
+        lastUpdated: updatedAt ?? DateTime.now(),
+      ),
+    );
   }
 
   void failLocationChange(String message) {

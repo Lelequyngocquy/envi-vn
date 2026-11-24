@@ -26,7 +26,8 @@ class CitySelectorSheet extends StatefulWidget {
 }
 
 class _CitySelectorSheetState extends State<CitySelectorSheet> {
-  static final List<AppLocationEntity> _allCities = AppLocationEntity.popularLocations;
+  static final List<AppLocationEntity> _allCities =
+      AppLocationEntity.popularLocations;
   String _searchQuery = '';
 
   @override
@@ -35,8 +36,12 @@ class _CitySelectorSheetState extends State<CitySelectorSheet> {
     final filteredCities = normalizedQuery.isEmpty
         ? _allCities
         : _allCities.where((city) {
-            return GeoDistanceHelper.normalize(city.name).contains(normalizedQuery) ||
-                GeoDistanceHelper.normalize(city.province).contains(normalizedQuery);
+            return GeoDistanceHelper.normalize(
+                  city.name,
+                ).contains(normalizedQuery) ||
+                GeoDistanceHelper.normalize(
+                  city.province,
+                ).contains(normalizedQuery);
           }).toList();
     return AppBottomSheet(
       title: 'Chọn khu vực theo dõi',
@@ -50,13 +55,33 @@ class _CitySelectorSheetState extends State<CitySelectorSheet> {
             decoration: InputDecoration(
               hintText: 'Tìm kiếm tỉnh/thành phố...',
               hintStyle: const TextStyle(color: UIColors.textMuted),
-              prefixIcon: const AppIcon(Icons.search, color: UIColors.textSecondary, size: 20),
+              prefixIcon: const AppIcon(
+                Icons.search,
+                color: UIColors.textSecondary,
+                size: 20,
+              ),
               filled: true,
-              fillColor: UIColors.white.withOpacity(0.07),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: UIColors.white.withOpacity(0.12))),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: UIColors.white.withOpacity(0.12))),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: UIColors.primary)),
+              fillColor: UIColors.white.withValues(alpha: 0.07),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: UIColors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(
+                  color: UIColors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: UIColors.primary),
+              ),
             ),
           ),
           const Gap(14),
@@ -70,35 +95,83 @@ class _CitySelectorSheetState extends State<CitySelectorSheet> {
               },
               leading: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(color: UIColors.primary.withOpacity(0.18), shape: BoxShape.circle),
-                child: const AppIcon(Icons.my_location_rounded, color: UIColors.primary, size: 20),
+                decoration: BoxDecoration(
+                  color: UIColors.primary.withValues(alpha: 0.18),
+                  shape: BoxShape.circle,
+                ),
+                child: const AppIcon(
+                  Icons.my_location_rounded,
+                  color: UIColors.primary,
+                  size: 20,
+                ),
               ),
-              title: const AppText.bold('Sử dụng vị trí hiện tại (GPS)', size: 14, color: UIColors.textPrimary),
-              subtitle: const AppText.regular('Tự động cập nhật theo tọa độ GPS của máy', size: 12, color: UIColors.textSecondary),
-              trailing: widget.currentCity.isGps ? const AppIcon(Icons.check_circle_rounded, color: UIColors.primary) : null,
+              title: const AppText.bold(
+                'Sử dụng vị trí hiện tại (GPS)',
+                size: 14,
+                color: UIColors.textPrimary,
+              ),
+              subtitle: const AppText.regular(
+                'Tự động cập nhật theo tọa độ GPS của máy',
+                size: 12,
+                color: UIColors.textSecondary,
+              ),
+              trailing: widget.currentCity.isGps
+                  ? const AppIcon(
+                      Icons.check_circle_rounded,
+                      color: UIColors.primary,
+                    )
+                  : null,
               contentPadding: EdgeInsets.zero,
             ),
           ),
           const Gap(16),
-          const AppText.bold('Tỉnh & Thành phố phổ biến:', size: 12, color: UIColors.textSecondary),
+          const AppText.bold(
+            'Tỉnh & Thành phố phổ biến:',
+            size: 12,
+            color: UIColors.textSecondary,
+          ),
           const Gap(8),
           Expanded(
             child: ListView.separated(
               physics: const ClampingScrollPhysics(),
               itemCount: filteredCities.length,
-              separatorBuilder: (_, _) => Divider(height: 1, color: UIColors.white.withOpacity(0.08)),
+              separatorBuilder: (_, _) => Divider(
+                height: 1,
+                color: UIColors.white.withValues(alpha: 0.08),
+              ),
               itemBuilder: (context, index) {
                 final city = filteredCities[index];
-                final isSelected = !widget.currentCity.isGps && widget.currentCity.latitude == city.latitude && widget.currentCity.longitude == city.longitude;
+                final isSelected =
+                    !widget.currentCity.isGps &&
+                    widget.currentCity.latitude == city.latitude &&
+                    widget.currentCity.longitude == city.longitude;
                 return ListTile(
                   onTap: () {
                     Navigator.pop(context);
                     widget.onCitySelected(city);
                   },
-                  title: AppText(city.name, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, color: isSelected ? UIColors.primary : UIColors.textPrimary),
-                  subtitle: AppText.regular(city.province, size: 12, color: UIColors.textSecondary),
-                  trailing: isSelected ? const AppIcon(Icons.check_circle_rounded, color: UIColors.primary) : null,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  title: AppText(
+                    city.name,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                    color: isSelected ? UIColors.primary : UIColors.textPrimary,
+                  ),
+                  subtitle: AppText.regular(
+                    city.province,
+                    size: 12,
+                    color: UIColors.textSecondary,
+                  ),
+                  trailing: isSelected
+                      ? const AppIcon(
+                          Icons.check_circle_rounded,
+                          color: UIColors.primary,
+                        )
+                      : null,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                 );
               },
             ),

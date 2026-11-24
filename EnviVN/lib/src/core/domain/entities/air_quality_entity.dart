@@ -26,7 +26,18 @@ class AirQualityEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [usAqi, europeanAqi, pm25, pm10, carbonMonoxide, nitrogenDioxide, sulphurDioxide, ozone, hourlyAqi, isOfflineCache];
+  List<Object?> get props => [
+    usAqi,
+    europeanAqi,
+    pm25,
+    pm10,
+    carbonMonoxide,
+    nitrogenDioxide,
+    sulphurDioxide,
+    ozone,
+    hourlyAqi,
+    isOfflineCache,
+  ];
 }
 
 class HourlyAqiPoint extends Equatable {

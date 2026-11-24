@@ -69,7 +69,7 @@ class AppBottomSheet extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: UIColors.transparent,
-      barrierColor: UIColors.black.withOpacity(0.65),
+      barrierColor: UIColors.black.withValues(alpha: 0.65),
       isDismissible: isDismissible,
       enableDrag: enableDrag,
       builder: (sheetContext) => AppBottomSheet(
@@ -96,20 +96,19 @@ class AppBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final maxHeight = maxHeightFactor != null
-        ? mediaQuery.size.height * maxHeightFactor!
-        : mediaQuery.size.height * 0.90;
-
+        ? screenHeight * maxHeightFactor!
+        : screenHeight * 0.90;
     final hasHeaderContent =
         title != null ||
         titleWidget != null ||
         icon != null ||
         trailing != null;
-
     return Container(
       constraints: BoxConstraints(maxHeight: maxHeight),
-      padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom + 24),
+      padding: EdgeInsets.only(bottom: bottomInset + 24),
       child: AppGlass(
         borderRadius: borderRadius,
         color: glassColor,
@@ -127,7 +126,7 @@ class AppBottomSheet extends StatelessWidget {
                     width: 44,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: UIColors.white.withOpacity(0.25),
+                      color: UIColors.white.withValues(alpha: 0.25),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

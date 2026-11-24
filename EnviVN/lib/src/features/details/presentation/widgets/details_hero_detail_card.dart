@@ -84,14 +84,14 @@ class DetailsHeroDetailCard extends StatelessWidget {
                 height: 68,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: weatherInfo.color.withOpacity(0.15),
+                  color: weatherInfo.color.withValues(alpha: 0.15),
                   border: Border.all(
-                    color: weatherInfo.color.withOpacity(0.4),
+                    color: weatherInfo.color.withValues(alpha: 0.4),
                     width: 1.2,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: weatherInfo.color.withOpacity(0.25),
+                      color: weatherInfo.color.withValues(alpha: 0.25),
                       blurRadius: 18,
                       spreadRadius: 2,
                     ),
@@ -110,10 +110,10 @@ class DetailsHeroDetailCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
-              color: UIColors.white.withOpacity(0.04),
+              color: UIColors.white.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: UIColors.white.withOpacity(0.08),
+                color: UIColors.white.withValues(alpha: 0.08),
                 width: 0.8,
               ),
             ),
@@ -168,7 +168,7 @@ class DetailsHeroDetailCard extends StatelessWidget {
     return Container(
       width: 1,
       height: 32,
-      color: UIColors.white.withOpacity(0.08),
+      color: UIColors.white.withValues(alpha: 0.08),
     );
   }
 }

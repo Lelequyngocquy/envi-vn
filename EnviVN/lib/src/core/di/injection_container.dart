@@ -33,27 +33,66 @@ Future<void> setupGetIt() async {
   await sl.reset();
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
-  sl.registerLazySingleton<LocalStorage>(() => LocalStorage(prefs: sl<SharedPreferences>()));
+  sl.registerLazySingleton<LocalStorage>(
+    () => LocalStorage(prefs: sl<SharedPreferences>()),
+  );
   sl.registerLazySingleton<ICacheStore>(() => sl<LocalStorage>());
-  sl.registerLazySingleton<http.Client>(() => http.Client(), dispose: (c) => c.close());
-  sl.registerLazySingleton<RestfulRequest>(() => RestfulRequest(client: sl<http.Client>()), dispose: (r) => r.close());
-  sl.registerLazySingleton<MapTileConfig>(() => MapTileConfig(urlTemplate: EnvConfig.osmTileUrl, userAgentPackageName: EnvConfig.mapUserAgent));
+  sl.registerLazySingleton<http.Client>(
+    () => http.Client(),
+    dispose: (c) => c.close(),
+  );
+  sl.registerLazySingleton<RestfulRequest>(
+    () => RestfulRequest(client: sl<http.Client>()),
+    dispose: (r) => r.close(),
+  );
+  sl.registerLazySingleton<MapTileConfig>(
+    () => MapTileConfig(
+      urlTemplate: EnvConfig.osmTileUrl,
+      userAgentPackageName: EnvConfig.mapUserAgent,
+    ),
+  );
   sl.registerLazySingleton<ILocationService>(() => LocationService());
   sl.registerLazySingleton<IAiChatService>(
-    () => EdgeAiInferenceService(bridge: BackendSseBridge(client: sl<http.Client>())),
+    () => EdgeAiInferenceService(
+      bridge: BackendSseBridge(client: sl<http.Client>()),
+    ),
     dispose: (s) => s.dispose(),
   );
   sl.registerLazySingleton<AppLocationCubit>(
-    () => AppLocationCubit(cacheStore: sl<ICacheStore>(), locationService: sl<ILocationService>()),
+    () => AppLocationCubit(
+      cacheStore: sl<ICacheStore>(),
+      locationService: sl<ILocationService>(),
+    ),
     dispose: (c) => c.close(),
   );
-  sl.registerLazySingleton<IDetailsRepository>(() => DetailsRepository(network: sl<RestfulRequest>(), storage: sl<ICacheStore>()));
-  sl.registerLazySingleton<DetailsCubit>(() => DetailsCubit(repository: sl<IDetailsRepository>()), dispose: (c) => c.close());
-  sl.registerLazySingleton<IAirQualityRepository>(() => AirQualityRepository(network: sl<RestfulRequest>(), storage: sl<ICacheStore>()));
-  sl.registerLazySingleton<AirQualityCubit>(() => AirQualityCubit(repository: sl<IAirQualityRepository>()), dispose: (c) => c.close());
-  sl.registerLazySingleton<IMapRepository>(() => MapRepository(network: sl<RestfulRequest>()));
+  sl.registerLazySingleton<IDetailsRepository>(
+    () => DetailsRepository(
+      network: sl<RestfulRequest>(),
+      storage: sl<ICacheStore>(),
+    ),
+  );
+  sl.registerLazySingleton<DetailsCubit>(
+    () => DetailsCubit(repository: sl<IDetailsRepository>()),
+    dispose: (c) => c.close(),
+  );
+  sl.registerLazySingleton<IAirQualityRepository>(
+    () => AirQualityRepository(
+      network: sl<RestfulRequest>(),
+      storage: sl<ICacheStore>(),
+    ),
+  );
+  sl.registerLazySingleton<AirQualityCubit>(
+    () => AirQualityCubit(repository: sl<IAirQualityRepository>()),
+    dispose: (c) => c.close(),
+  );
+  sl.registerLazySingleton<IMapRepository>(
+    () => MapRepository(network: sl<RestfulRequest>()),
+  );
   sl.registerLazySingleton<INasaFirmsRepository>(
-    () => NasaFirmsRepository(client: sl<http.Client>(), storage: sl<ICacheStore>()),
+    () => NasaFirmsRepository(
+      client: sl<http.Client>(),
+      storage: sl<ICacheStore>(),
+    ),
     dispose: (r) {
       if (r is NasaFirmsRepository) r.close();
     },
@@ -76,5 +115,7 @@ Future<void> setupGetIt() async {
     dispose: (c) => c.close(),
   );
   sl.registerFactory<AdvisorCubit>(() => AdvisorCubit());
-  sl.registerFactory<AdvisorChatCubit>(() => AdvisorChatCubit(inferenceService: sl<IAiChatService>()));
+  sl.registerFactory<AdvisorChatCubit>(
+    () => AdvisorChatCubit(inferenceService: sl<IAiChatService>()),
+  );
 }

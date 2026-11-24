@@ -31,12 +31,12 @@ class DroppedPinMarkerWidget extends StatelessWidget {
             border: Border.all(color: UIColors.white, width: 2.2),
             boxShadow: [
               BoxShadow(
-                color: UIColors.pinPurple.withOpacity(0.65),
+                color: UIColors.pinPurple.withValues(alpha: 0.65),
                 blurRadius: 10,
                 spreadRadius: 2,
               ),
               BoxShadow(
-                color: UIColors.black.withOpacity(0.35),
+                color: UIColors.black.withValues(alpha: 0.35),
                 blurRadius: 5,
                 offset: const Offset(0, 2),
               ),

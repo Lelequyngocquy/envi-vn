@@ -108,7 +108,7 @@ class TwentyFourHourTempChart extends StatelessWidget {
                   drawVerticalLine: false,
                   horizontalInterval: interval,
                   getDrawingHorizontalLine: (value) => FlLine(
-                    color: UIColors.border.withOpacity(0.6),
+                    color: UIColors.border.withValues(alpha: 0.6),
                     strokeWidth: 1,
                   ),
                 ),
@@ -175,8 +175,8 @@ class TwentyFourHourTempChart extends StatelessWidget {
                       show: true,
                       gradient: LinearGradient(
                         colors: [
-                          UIColors.error.withOpacity(0.35),
-                          UIColors.error.withOpacity(0.0),
+                          UIColors.error.withValues(alpha: 0.35),
+                          UIColors.error.withValues(alpha: 0.0),
                         ],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,

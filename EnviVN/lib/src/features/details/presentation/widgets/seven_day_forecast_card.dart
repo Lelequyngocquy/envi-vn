@@ -44,8 +44,10 @@ class SevenDayForecastCard extends StatelessWidget {
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: days.length,
-            separatorBuilder: (context, index) =>
-                Divider(color: UIColors.white.withOpacity(0.06), height: 16),
+            separatorBuilder: (context, index) => Divider(
+              color: UIColors.white.withValues(alpha: 0.06),
+              height: 16,
+            ),
             itemBuilder: (context, index) {
               final day = days[index];
               final dayName = DateHelper.formatWeekday(day.date);
@@ -87,7 +89,7 @@ class SevenDayForecastCard extends StatelessWidget {
                         vertical: 2,
                       ),
                       decoration: BoxDecoration(
-                        color: UIColors.secondary.withOpacity(0.12),
+                        color: UIColors.secondary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: AppText.semiBold(

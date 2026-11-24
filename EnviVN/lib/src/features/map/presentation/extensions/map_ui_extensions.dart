@@ -34,5 +34,6 @@ extension MapLayerTypeUiX on MapLayerType {
 }
 
 extension StationHeatUiX on StationEntity {
-  HeatRiskLevel get heatRiskLevel => HeatIndexHelper.getRiskLevel(calculatedHeatIndex);
+  HeatRiskLevel get heatRiskLevel =>
+      HeatIndexHelper.getRiskLevel(calculatedHeatIndex);
 }

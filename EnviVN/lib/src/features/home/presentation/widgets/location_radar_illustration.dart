@@ -20,7 +20,7 @@ class LocationRadarIllustration extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: UIColors.primary.withOpacity(0.2),
+                  color: UIColors.primary.withValues(alpha: 0.2),
                   width: 2,
                 ),
               ),
@@ -32,7 +32,7 @@ class LocationRadarIllustration extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: UIColors.primary.withOpacity(0.35),
+                  color: UIColors.primary.withValues(alpha: 0.35),
                   width: 2,
                 ),
               ),
@@ -44,7 +44,7 @@ class LocationRadarIllustration extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: UIColors.primary.withOpacity(0.5),
+                  color: UIColors.primary.withValues(alpha: 0.5),
                   width: 2,
                 ),
               ),
@@ -56,7 +56,7 @@ class LocationRadarIllustration extends StatelessWidget {
                 width: 80,
                 height: 14,
                 decoration: BoxDecoration(
-                  color: UIColors.black.withOpacity(0.4),
+                  color: UIColors.black.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(10),
                 ),
               ),
@@ -70,7 +70,7 @@ class LocationRadarIllustration extends StatelessWidget {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: UIColors.primary.withOpacity(0.6),
+                    color: UIColors.primary.withValues(alpha: 0.6),
                     blurRadius: 24,
                     spreadRadius: 2,
                   ),

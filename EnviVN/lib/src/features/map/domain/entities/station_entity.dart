@@ -63,9 +63,13 @@ class StationEntity extends Equatable {
     this.fireDetectedTime,
   });
 
-  double get calculatedHeatIndex => HeatIndexCalculator.calculateHeatIndex(temperature ?? 28.0, humidity ?? 70);
+  double get calculatedHeatIndex => HeatIndexCalculator.calculateHeatIndex(
+    temperature ?? 28.0,
+    humidity ?? 70,
+  );
 
-  HeatRiskGrade get heatRiskGrade => HeatIndexCalculator.getRiskGrade(calculatedHeatIndex);
+  HeatRiskGrade get heatRiskGrade =>
+      HeatIndexCalculator.getRiskGrade(calculatedHeatIndex);
 
   bool get isHighFloodRisk => (precipitation ?? 0.0) >= 20.0;
 
@@ -118,13 +122,15 @@ class StationEntity extends Equatable {
       uvIndex: uvIndex ?? this.uvIndex,
       isFloodBlackspot: isFloodBlackspot ?? this.isFloodBlackspot,
       historicalDepthCm: historicalDepthCm ?? this.historicalDepthCm,
-      floodTriggerCondition: floodTriggerCondition ?? this.floodTriggerCondition,
+      floodTriggerCondition:
+          floodTriggerCondition ?? this.floodTriggerCondition,
       floodProneTime: floodProneTime ?? this.floodProneTime,
       spotDescription: spotDescription ?? this.spotDescription,
       isThermalHotspot: isThermalHotspot ?? this.isThermalHotspot,
       isActiveFire: isActiveFire ?? this.isActiveFire,
       fireType: fireType ?? this.fireType,
-      fireBrightnessCelsius: fireBrightnessCelsius ?? this.fireBrightnessCelsius,
+      fireBrightnessCelsius:
+          fireBrightnessCelsius ?? this.fireBrightnessCelsius,
       fireConfidence: fireConfidence ?? this.fireConfidence,
       fireProneSeason: fireProneSeason ?? this.fireProneSeason,
       fireDetectedTime: fireDetectedTime ?? this.fireDetectedTime,

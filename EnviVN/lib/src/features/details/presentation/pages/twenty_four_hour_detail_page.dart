@@ -1,3 +1,6 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/common/utils/aqi_helper.dart';
 import 'package:envivn/src/common/utils/date_helper.dart';
@@ -17,12 +20,9 @@ import 'package:envivn/src/features/details/presentation/widgets/health_advisory
 import 'package:envivn/src/features/details/presentation/widgets/hourly_details_slider.dart';
 import 'package:envivn/src/features/details/presentation/widgets/seven_day_forecast_card.dart';
 import 'package:envivn/src/features/details/presentation/widgets/twenty_four_hour_temp_chart.dart';
+import 'package:envivn/src/shared/widgets/app_button.dart';
 import 'package:envivn/src/shared/widgets/city_selector_sheet.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../shared/widgets/app_button.dart';
 
 class TwentyFourHourDetailPage extends StatelessWidget {
   const TwentyFourHourDetailPage({super.key});
@@ -34,178 +34,259 @@ class TwentyFourHourDetailPage extends StatelessWidget {
       backgroundColor: UIColors.transparent,
       builder: (_) => CitySelectorSheet(
         currentCity: state.currentLocation,
-        onCitySelected: (city) {
-          context.read<AppLocationCubit>().selectLocation(city);
-        },
-        onSelectGps: () {
-          context.read<AppLocationCubit>().detectGpsLocation();
-        },
+        onCitySelected: (city) =>
+            context.read<AppLocationCubit>().selectLocation(city),
+        onSelectGps: () => context.read<AppLocationCubit>().detectGpsLocation(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final dateStr = DateHelper.formatVietnameseFull(now);
-
+    final dateStr = DateHelper.formatVietnameseFull(DateTime.now());
     return Scaffold(
       backgroundColor: UIColors.bg,
       body: SafeArea(
-        child: BlocBuilder<AirQualityCubit, AirQualityState>(
-          builder: (context, aqiState) {
-            return BlocBuilder<DetailsCubit, DetailsState>(
-              builder: (context, detailsState) {
-                final aqi = aqiState.airQuality;
-                final details = detailsState.details;
-                final weatherInfo = WeatherCodeHelper.getInfo(
-                  details.weatherCode,
-                );
-                final aqiInfo = AQIHelper.getAQIInfo(aqi.usAqi);
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(context, dateStr),
+            Expanded(
+              child: ClipRect(
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: ClampingScrollPhysics(),
+                  ),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildWeatherSection(),
+                      _buildAirQualitySection(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
-                      decoration: BoxDecoration(
-                        color: UIColors.bg.withOpacity(0.92),
-                        border: Border(
-                          bottom: BorderSide(
-                            color: UIColors.white.withOpacity(0.06),
-                            width: 0.8,
-                          ),
-                        ),
+  Widget _buildHeader(BuildContext context, String dateStr) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 6, 16, 12),
+      decoration: BoxDecoration(
+        color: UIColors.bg.withValues(alpha: 0.92),
+        border: Border(
+          bottom: BorderSide(
+            color: UIColors.white.withValues(alpha: 0.06),
+            width: 0.8,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const AppBackButton(),
+              const Gap(8),
+              Expanded(
+                child: AppText.semiBold(
+                  dateStr,
+                  size: 13,
+                  color: UIColors.textSecondary,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Gap(8),
+              BlocBuilder<AppLocationCubit, AppLocationState>(
+                buildWhen: (prev, curr) =>
+                    prev.currentLocation != curr.currentLocation,
+                builder: (context, locationState) {
+                  return GestureDetector(
+                    onTap: () => _openCitySelector(context, locationState),
+                    child: AppGlass(
+                      isFixed: true,
+                      borderRadius: 18,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Row(
-                            children: [
-                              const AppBackButton(),
-                              const Gap(8),
-                              Expanded(
-                                child: AppText.semiBold(
-                                  dateStr,
-                                  size: 13,
-                                  color: UIColors.textSecondary,
-                                  textAlign: TextAlign.center,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const Gap(8),
-                              BlocBuilder<AppLocationCubit, AppLocationState>(
-                                buildWhen: (prev, curr) => prev.currentLocation != curr.currentLocation,
-                                builder: (context, locationState) {
-                                  return GestureDetector(
-                                    onTap: () => _openCitySelector(context, locationState),
-                                    child: AppGlass(
-                                      isFixed: true,
-                                      borderRadius: 18,
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          ConstrainedBox(
-                                            constraints: const BoxConstraints(maxWidth: 160),
-                                            child: AppText.semiBold(
-                                              locationState.currentLocation.name,
-                                              size: 13,
-                                              color: UIColors.primaryDark,
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ),
-                                          const Gap(4),
-                                          const AppIcon(
-                                            Icons.keyboard_arrow_down_rounded,
-                                            color: UIColors.textSecondary,
-                                            size: 18,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
+                          ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 160),
+                            child: AppText.semiBold(
+                              locationState.currentLocation.name,
+                              size: 13,
+                              color: UIColors.primaryDark,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                            ),
                           ),
-                          const Gap(12),
-
-                          DetailSegmentedFilter(
-                            activeTab: detailsState.activeDetailTab,
-                            onTabChanged: (tab) =>
-                                context.read<DetailsCubit>().setDetailTab(tab),
+                          const Gap(4),
+                          const AppIcon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: UIColors.textSecondary,
+                            size: 18,
                           ),
                         ],
                       ),
                     ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const Gap(12),
+          BlocSelector<DetailsCubit, DetailsState, DetailTab>(
+            selector: (state) => state.activeDetailTab,
+            builder: (context, activeTab) {
+              return DetailSegmentedFilter(
+                activeTab: activeTab,
+                onTabChanged: (tab) =>
+                    context.read<DetailsCubit>().setDetailTab(tab),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-                    Expanded(
-                      child: ClipRect(
-                        child: SingleChildScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(
-                            parent: ClampingScrollPhysics(),
-                          ),
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              if (detailsState.showWeatherSection) ...[
-                                _buildSectionHeader(
-                                  title: 'DỰ BÁO THỜI TIẾT 24 GIỜ TỚI',
-                                  icon: Icons.wb_sunny_rounded,
-                                  iconColor: UIColors.warning,
-                                  tag: weatherInfo.shortLabel,
-                                  tagColor: weatherInfo.color,
-                                ),
-                                const Gap(12),
-                                DetailsHeroDetailCard(details: details),
-                                const Gap(16),
-                                TwentyFourHourTempChart(
-                                  hourlyList: details.hourlyForecast,
-                                ),
-                                const Gap(16),
-                                HourlyDetailsSlider(
-                                  hourlyList: details.hourlyForecast,
-                                ),
-                                const Gap(16),
-                                if (details.dailyForecast.isNotEmpty) ...[
-                                  SevenDayForecastCard(
-                                    dailyForecast: details.dailyForecast,
-                                  ),
-                                  const Gap(18),
-                                ],
-                              ],
+  Widget _buildWeatherSection() {
+    return BlocBuilder<DetailsCubit, DetailsState>(
+      buildWhen: (prev, curr) =>
+          prev.showWeatherSection != curr.showWeatherSection ||
+          prev.details != curr.details ||
+          prev.status != curr.status ||
+          prev.errorMessage != curr.errorMessage,
+      builder: (context, detailsState) {
+        if (!detailsState.showWeatherSection) return const SizedBox.shrink();
+        final details = detailsState.details;
+        final weatherInfo = WeatherCodeHelper.getInfo(details.weatherCode);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (detailsState.status == DetailsStatus.loading)
+              const Padding(
+                padding: EdgeInsets.only(bottom: 12),
+                child: LinearProgressIndicator(
+                  minHeight: 2,
+                  color: UIColors.primary,
+                  backgroundColor: Colors.transparent,
+                ),
+              ),
+            if (detailsState.status == DetailsStatus.failure &&
+                detailsState.errorMessage != null)
+              _buildErrorBanner(detailsState.errorMessage!),
+            _buildSectionHeader(
+              title: 'DỰ BÁO THỜI TIẾT 24 GIỜ TỚI',
+              icon: Icons.wb_sunny_rounded,
+              iconColor: UIColors.warning,
+              tag: weatherInfo.shortLabel,
+              tagColor: weatherInfo.color,
+            ),
+            const Gap(12),
+            DetailsHeroDetailCard(details: details),
+            const Gap(16),
+            TwentyFourHourTempChart(hourlyList: details.hourlyForecast),
+            const Gap(16),
+            HourlyDetailsSlider(hourlyList: details.hourlyForecast),
+            const Gap(16),
+            if (details.dailyForecast.isNotEmpty) ...[
+              SevenDayForecastCard(dailyForecast: details.dailyForecast),
+              const Gap(18),
+            ],
+          ],
+        );
+      },
+    );
+  }
 
-                              if (detailsState.showAirQualitySection) ...[
-                                _buildSectionHeader(
-                                  title: 'CHẤT LƯỢNG KHÔNG KHÍ & BỤI MỊN',
-                                  icon: Icons.air_rounded,
-                                  iconColor: UIColors.primary,
-                                  tag: 'AQI ${aqi.usAqi} • ${aqiInfo.label}',
-                                  tagColor: aqiInfo.color,
-                                ),
-                                const Gap(12),
-                                AqiPollutantsGrid(aqi: aqi),
-                                const Gap(16),
-                                Aqi24hChartCard(hourlyPoints: aqi.hourlyAqi),
-                                const Gap(16),
-                                HealthAdvisoryCard(aqi: aqi.usAqi),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
+  Widget _buildAirQualitySection() {
+    return BlocSelector<DetailsCubit, DetailsState, bool>(
+      selector: (state) => state.showAirQualitySection,
+      builder: (context, showAqi) {
+        if (!showAqi) return const SizedBox.shrink();
+        return BlocBuilder<AirQualityCubit, AirQualityState>(
+          buildWhen: (prev, curr) =>
+              prev.airQuality != curr.airQuality ||
+              prev.status != curr.status ||
+              prev.errorMessage != curr.errorMessage,
+          builder: (context, aqiState) {
+            final aqi = aqiState.airQuality;
+            final aqiInfo = AQIHelper.getAQIInfo(aqi.usAqi);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (aqiState.status == AirQualityStatus.loading)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: LinearProgressIndicator(
+                      minHeight: 2,
+                      color: UIColors.primary,
+                      backgroundColor: Colors.transparent,
                     ),
-                  ],
-                );
-              },
+                  ),
+                if (aqiState.status == AirQualityStatus.failure &&
+                    aqiState.errorMessage != null)
+                  _buildErrorBanner(aqiState.errorMessage!),
+                _buildSectionHeader(
+                  title: 'CHẤT LƯỢNG KHÔNG KHÍ & BỤI MỊN',
+                  icon: Icons.air_rounded,
+                  iconColor: UIColors.primary,
+                  tag: 'AQI ${aqi.usAqi} • ${aqiInfo.label}',
+                  tagColor: aqiInfo.color,
+                ),
+                const Gap(12),
+                AqiPollutantsGrid(aqi: aqi),
+                const Gap(16),
+                Aqi24hChartCard(hourlyPoints: aqi.hourlyAqi),
+                const Gap(16),
+                HealthAdvisoryCard(aqi: aqi.usAqi),
+              ],
             );
           },
-        ),
+        );
+      },
+    );
+  }
+
+  Widget _buildErrorBanner(String message) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: UIColors.error.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: UIColors.error.withValues(alpha: 0.4)),
+      ),
+      child: Row(
+        children: [
+          const AppIcon(
+            Icons.error_outline_rounded,
+            size: 16,
+            color: UIColors.error,
+          ),
+          const Gap(8),
+          Expanded(
+            child: AppText.regular(
+              message,
+              size: 11.5,
+              color: UIColors.textPrimary,
+              maxLines: 2,
+            ),
+          ),
+        ],
       ),
     );
   }

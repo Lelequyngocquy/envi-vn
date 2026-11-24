@@ -29,28 +29,42 @@ class AqiPollutantsGrid extends StatelessWidget {
           value: hasPm25 ? aqi.pm25.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
           progress: hasPm25 ? (aqi.pm25 / 75.0).clamp(0.0, 1.0) : 0.0,
-          progressColor: !hasPm25 ? UIColors.textMuted : (aqi.pm25 > 35 ? UIColors.aqiUnhealthySensitive : UIColors.aqiGood),
+          progressColor: !hasPm25
+              ? UIColors.textMuted
+              : (aqi.pm25 > 35
+                    ? UIColors.aqiUnhealthySensitive
+                    : UIColors.aqiGood),
         ),
         _GlassPollutantCard(
           label: 'PM10',
           value: hasPm10 ? aqi.pm10.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
           progress: hasPm10 ? (aqi.pm10 / 100.0).clamp(0.0, 1.0) : 0.0,
-          progressColor: !hasPm10 ? UIColors.textMuted : (aqi.pm10 > 50 ? UIColors.aqiModerate : UIColors.aqiGood),
+          progressColor: !hasPm10
+              ? UIColors.textMuted
+              : (aqi.pm10 > 50 ? UIColors.aqiModerate : UIColors.aqiGood),
         ),
         _GlassPollutantCard(
           label: 'O₃ (Ozone)',
           value: hasOzone ? aqi.ozone.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
           progress: hasOzone ? (aqi.ozone / 120.0).clamp(0.0, 1.0) : 0.0,
-          progressColor: !hasOzone ? UIColors.textMuted : (aqi.ozone > 100 ? UIColors.aqiUnhealthySensitive : UIColors.secondary),
+          progressColor: !hasOzone
+              ? UIColors.textMuted
+              : (aqi.ozone > 100
+                    ? UIColors.aqiUnhealthySensitive
+                    : UIColors.secondary),
         ),
         _GlassPollutantCard(
           label: 'NO₂',
           value: hasNo2 ? aqi.nitrogenDioxide.toStringAsFixed(1) : '--',
           unit: 'µg/m³',
           progress: hasNo2 ? (aqi.nitrogenDioxide / 60.0).clamp(0.0, 1.0) : 0.0,
-          progressColor: !hasNo2 ? UIColors.textMuted : (aqi.nitrogenDioxide > 40 ? UIColors.aqiModerate : UIColors.aqiGood),
+          progressColor: !hasNo2
+              ? UIColors.textMuted
+              : (aqi.nitrogenDioxide > 40
+                    ? UIColors.aqiModerate
+                    : UIColors.aqiGood),
         ),
       ],
     );

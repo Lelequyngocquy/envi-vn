@@ -120,10 +120,20 @@ void main() {
 
     test('fetchForLocation delegates coordinates properly', () async {
       cubit = DetailsCubit(repository: repository);
-      repository.nextResult = BaseResult<DetailsEntity>(success: true, data: const DetailsEntity(currentTemp: 22.0));
+      repository.nextResult = BaseResult<DetailsEntity>(
+        success: true,
+        data: const DetailsEntity(currentTemp: 22.0),
+      );
       await cubit.fetchDetails(latitude: 16.0, longitude: 108.0);
       expect(cubit.state.status, equals(DetailsStatus.success));
-      await cubit.fetchForLocation(AppLocationEntity.city(name: 'Hải Phòng', province: 'Hải Phòng', latitude: 20.8, longitude: 106.6));
+      await cubit.fetchForLocation(
+        AppLocationEntity.city(
+          name: 'Hải Phòng',
+          province: 'Hải Phòng',
+          latitude: 20.8,
+          longitude: 106.6,
+        ),
+      );
       expect(cubit.state.status, equals(DetailsStatus.success));
     });
   });

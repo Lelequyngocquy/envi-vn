@@ -16,14 +16,21 @@ class MapRepository implements IMapRepository {
   @override
   Future<BaseResult<List<StationEntity>>> getVietnamStations() async {
     try {
-      final endpoint = EndpointType(path: MapPaths.stations, method: HttpMethod.get);
+      final endpoint = EndpointType(
+        path: MapPaths.stations,
+        method: HttpMethod.get,
+      );
       final res = await network.requestData(endpoint, showErrorToast: false);
       if (res.isSuccess && res.data is Map) {
         final rawStations = (res.data as Map)['stations'];
         if (rawStations is List) {
           final stations = rawStations
               .whereType<Map>()
-              .map((item) => StationModel.fromBackendJson(Map<String, dynamic>.from(item)))
+              .map(
+                (item) => StationModel.fromBackendJson(
+                  Map<String, dynamic>.from(item),
+                ),
+              )
               .where((s) => s.id.isNotEmpty)
               .toList();
           if (stations.isNotEmpty) {
@@ -31,12 +38,21 @@ class MapRepository implements IMapRepository {
           }
         }
       }
-      return BaseResult(success: false, message: res.message ?? 'Không nhận được dữ liệu trạm quan trắc từ máy chủ.', data: const []);
+      return BaseResult(
+        success: false,
+        message:
+            res.message ?? 'Không nhận được dữ liệu trạm quan trắc từ máy chủ.',
+        data: const [],
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[MapRepository] Error: $e');
       }
-      return BaseResult(success: false, message: 'Không thể tải danh sách trạm quan trắc lúc này.', data: const []);
+      return BaseResult(
+        success: false,
+        message: 'Không thể tải danh sách trạm quan trắc lúc này.',
+        data: const [],
+      );
     }
   }
 }

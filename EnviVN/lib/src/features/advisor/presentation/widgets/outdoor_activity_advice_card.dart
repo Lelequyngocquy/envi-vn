@@ -63,7 +63,7 @@ class OutdoorActivityAdviceCard extends StatelessWidget {
                     Container(
                       padding: EdgeInsets.all(isCompact ? 6 : 8),
                       decoration: BoxDecoration(
-                        color: adviceData.statusColor.withOpacity(0.18),
+                        color: adviceData.statusColor.withValues(alpha: 0.18),
                         borderRadius: BorderRadius.circular(isCompact ? 8 : 10),
                       ),
                       child: AppIcon(
@@ -196,9 +196,9 @@ class _TimeSlotGlassChip extends StatelessWidget {
             ? const EdgeInsets.symmetric(horizontal: 6, vertical: 5)
             : const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: UIColors.white.withOpacity(0.06),
+          color: UIColors.white.withValues(alpha: 0.06),
           borderRadius: BorderRadius.circular(isCompact ? 10 : 12),
-          border: Border.all(color: UIColors.white.withOpacity(0.12)),
+          border: Border.all(color: UIColors.white.withValues(alpha: 0.12)),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

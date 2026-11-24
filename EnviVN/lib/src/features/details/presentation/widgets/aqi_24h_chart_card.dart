@@ -2,8 +2,8 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
-import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/core/domain/entities/air_quality_entity.dart';
+import 'package:envivn/src/core/presentation/widgets/widgets.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 
 class Aqi24hChartCard extends StatelessWidget {
@@ -19,13 +19,13 @@ class Aqi24hChartCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     AppText.bold(
                       'Diễn biến nồng độ 24 giờ qua',
                       maxLines: 3,
@@ -44,8 +44,8 @@ class Aqi24hChartCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Gap(8),
-              const AppStatusTag(
+              Gap(8),
+              AppStatusTag(
                 label: 'AQI US',
                 color: UIColors.primary,
                 size: AppTagSize.medium,
@@ -64,61 +64,39 @@ class Aqi24hChartCard extends StatelessWidget {
       return const SizedBox(
         height: 120,
         child: Center(
-          child: AppText.regular('Chưa có dữ liệu diễn biến AQI 24 giờ', size: 12.5, color: UIColors.textMuted),
+          child: AppText.regular(
+            'Chưa có dữ liệu diễn biến AQI 24 giờ',
+            size: 12.5,
+            color: UIColors.textMuted,
+          ),
         ),
       );
     }
-    final spots = <FlSpot>[];
-    final step = (points.length / 9).clamp(1, 10).toInt();
-    for (int i = 0; i < points.length && spots.length < 9; i += step) {
-      final p = points[i];
-      spots.add(FlSpot(spots.length.toDouble(), p.aqi.toDouble()));
-    }
-    double rawMax = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-
-    const double minY = 0.0;
-    final double maxY;
-    final double interval;
-
-    if (rawMax <= 40) {
-      maxY = 50.0;
-      interval = 10.0;
-    } else if (rawMax <= 80) {
-      maxY = 100.0;
-      interval = 25.0;
-    } else if (rawMax <= 125) {
-      maxY = 150.0;
-      interval = 50.0;
-    } else if (rawMax <= 170) {
-      maxY = 200.0;
-      interval = 50.0;
-    } else if (rawMax <= 220) {
-      maxY = 250.0;
-      interval = 50.0;
-    } else if (rawMax <= 270) {
-      maxY = 300.0;
-      interval = 50.0;
-    } else if (rawMax <= 360) {
-      maxY = 400.0;
-      interval = 100.0;
-    } else {
-      maxY = ((rawMax / 100).ceil() + 1) * 100.0;
-      interval = 100.0;
-    }
-
+    final chartPoints = points.length > 24 ? points.sublist(0, 24) : points;
+    final spots = List<FlSpot>.generate(
+      chartPoints.length,
+      (i) => FlSpot(i.toDouble(), chartPoints[i].aqi.toDouble()),
+    );
+    final rawMax = spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
+    final (maxY, interval) = _resolveYAxisScale(rawMax);
+    final labelStep = chartPoints.length <= 6
+        ? 1
+        : (chartPoints.length / 4).round().clamp(1, 6);
     return SizedBox(
       height: 170,
       child: LineChart(
         LineChartData(
           clipData: const FlClipData.all(),
-          minY: minY,
+          minY: 0.0,
           maxY: maxY,
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
             horizontalInterval: interval,
-            getDrawingHorizontalLine: (value) =>
-                FlLine(color: UIColors.border.withOpacity(0.6), strokeWidth: 1),
+            getDrawingHorizontalLine: (_) => FlLine(
+              color: UIColors.border.withValues(alpha: 0.6),
+              strokeWidth: 1,
+            ),
           ),
           titlesData: FlTitlesData(
             leftTitles: AxisTitles(
@@ -143,21 +121,29 @@ class Aqi24hChartCard extends StatelessWidget {
               sideTitles: SideTitles(
                 showTitles: true,
                 reservedSize: 26,
-                interval: 2,
+                interval: 1,
                 getTitlesWidget: (val, _) {
-                  final hours = ['00h', '06h', '12h', '18h', '24h'];
-                  final idx = (val / 2).toInt();
-                  if (idx >= 0 && idx < hours.length) {
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: AppText.regular(
-                        hours[idx],
-                        color: UIColors.textSecondary,
-                        size: 11,
-                      ),
-                    );
+                  final idx = val.round();
+                  if (idx < 0 || idx >= chartPoints.length) {
+                    return const SizedBox.shrink();
                   }
-                  return const SizedBox.shrink();
+                  final isEdge = idx == 0 || idx == chartPoints.length - 1;
+                  final isTick =
+                      idx % labelStep == 0 &&
+                      (chartPoints.length - 1 - idx) >= (labelStep ~/ 2);
+                  if (!isEdge && !isTick) return const SizedBox.shrink();
+                  final hour = chartPoints[idx].time.hour.toString().padLeft(
+                    2,
+                    '0',
+                  );
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: AppText.regular(
+                      '${hour}h',
+                      color: UIColors.textSecondary,
+                      size: 11,
+                    ),
+                  );
                 },
               ),
             ),
@@ -173,10 +159,16 @@ class Aqi24hChartCard extends StatelessWidget {
               isStrokeCapRound: true,
               dotData: FlDotData(
                 show: true,
-                getDotPainter: (spot, _, _, _) => FlDotCirclePainter(
-                  radius: 4,
+                checkToShowDot: (spot, _) {
+                  final idx = spot.x.round();
+                  return idx == 0 ||
+                      idx == chartPoints.length - 1 ||
+                      idx % labelStep == 0;
+                },
+                getDotPainter: (_, _, _, _) => FlDotCirclePainter(
+                  radius: 3.5,
                   color: UIColors.bg,
-                  strokeWidth: 2.5,
+                  strokeWidth: 2.2,
                   strokeColor: UIColors.primary,
                 ),
               ),
@@ -184,8 +176,8 @@ class Aqi24hChartCard extends StatelessWidget {
                 show: true,
                 gradient: LinearGradient(
                   colors: [
-                    UIColors.primary.withOpacity(0.35),
-                    UIColors.primary.withOpacity(0.0),
+                    UIColors.primary.withValues(alpha: 0.35),
+                    UIColors.primary.withValues(alpha: 0.0),
                   ],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -196,5 +188,16 @@ class Aqi24hChartCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  (double, double) _resolveYAxisScale(double rawMax) {
+    if (rawMax <= 40) return (50.0, 10.0);
+    if (rawMax <= 80) return (100.0, 25.0);
+    if (rawMax <= 125) return (150.0, 50.0);
+    if (rawMax <= 170) return (200.0, 50.0);
+    if (rawMax <= 220) return (250.0, 50.0);
+    if (rawMax <= 270) return (300.0, 50.0);
+    if (rawMax <= 360) return (400.0, 100.0);
+    return (((rawMax / 100).ceil() + 1) * 100.0, 100.0);
   }
 }

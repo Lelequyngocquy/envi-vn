@@ -104,7 +104,7 @@ class NavBarItem extends StatelessWidget {
               color: isActive ? UIColors.primary : UIColors.textMuted,
               size: label != null ? 22 : 40,
             ),
-            if (label != null) ...{
+            if (label != null) ...[
               const Gap(3),
               AppText(
                 label ?? '',
@@ -112,7 +112,7 @@ class NavBarItem extends StatelessWidget {
                 fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
                 color: isActive ? UIColors.primary : UIColors.primaryDark,
               ),
-            },
+            ],
           ],
         ),
       ),

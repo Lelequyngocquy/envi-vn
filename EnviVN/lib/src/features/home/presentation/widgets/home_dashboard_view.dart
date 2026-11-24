@@ -27,7 +27,7 @@ class HomeDashboardView extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: UIColors.transparent,
-      barrierColor: UIColors.black.withOpacity(0.65),
+      barrierColor: UIColors.black.withValues(alpha: 0.65),
       builder: (_) => CitySelectorSheet(
         currentCity: state.currentCity,
         onCitySelected: (city) {
@@ -57,7 +57,7 @@ class HomeDashboardView extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  UIColors.primary.withOpacity(0.18),
+                  UIColors.primary.withValues(alpha: 0.18),
                   UIColors.transparent,
                 ],
               ),
@@ -74,7 +74,7 @@ class HomeDashboardView extends StatelessWidget {
               shape: BoxShape.circle,
               gradient: RadialGradient(
                 colors: [
-                  UIColors.secondary.withOpacity(0.14),
+                  UIColors.secondary.withValues(alpha: 0.14),
                   UIColors.transparent,
                 ],
               ),
@@ -117,7 +117,7 @@ class HomeDashboardView extends StatelessWidget {
                     decoration: BoxDecoration(
                       border: Border(
                         bottom: BorderSide(
-                          color: UIColors.white.withOpacity(0.06),
+                          color: UIColors.white.withValues(alpha: 0.06),
                           width: 0.8,
                         ),
                       ),

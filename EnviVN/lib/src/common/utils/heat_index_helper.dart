@@ -45,7 +45,8 @@ enum HeatRiskLevel {
 class HeatIndexHelper {
   HeatIndexHelper._();
 
-  static double calculateHeatIndex(double tempC, int humidity) => HeatIndexCalculator.calculateHeatIndex(tempC, humidity);
+  static double calculateHeatIndex(double tempC, int humidity) =>
+      HeatIndexCalculator.calculateHeatIndex(tempC, humidity);
 
   static HeatRiskLevel getRiskLevel(double heatIndexC) {
     switch (HeatIndexCalculator.getRiskGrade(heatIndexC)) {

@@ -65,10 +65,10 @@ class UtilityCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: iconColor.withOpacity(0.16),
+                    color: iconColor.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: iconColor.withOpacity(0.3),
+                      color: iconColor.withValues(alpha: 0.3),
                       width: 1,
                     ),
                   ),

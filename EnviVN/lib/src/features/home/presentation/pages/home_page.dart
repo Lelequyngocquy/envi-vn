@@ -1,4 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
 import 'package:envivn/src/common/constants/colors.dart';
+import 'package:envivn/src/core/presentation/widgets/future_work_widget.dart';
 import 'package:envivn/src/core/presentation/widgets/location_loading_overlay.dart';
 import 'package:envivn/src/features/advisor/presentation/widgets/advisor_modal_sheet.dart';
 import 'package:envivn/src/features/air_quality/presentation/cubits/air_quality_cubit.dart';
@@ -9,10 +13,6 @@ import 'package:envivn/src/features/home/presentation/cubits/home_dashboard_stat
 import 'package:envivn/src/features/home/presentation/widgets/home_dashboard_view.dart';
 import 'package:envivn/src/features/home/presentation/widgets/liquid_glass_bottom_bar.dart';
 import 'package:envivn/src/features/map/presentation/pages/map_page.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../core/presentation/widgets/future_work_widget.dart';
 
 class HomePage extends StatefulWidget {
   final int initialTab;
@@ -24,9 +24,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // Tracks which tabs have been visited so heavy tabs like MapPage mount lazily on first visit.
+  final Set<int> _mountedTabs = {};
+
   @override
   void initState() {
     super.initState();
+    _mountedTabs.add(widget.initialTab);
     final cubit = context.read<HomeDashboardCubit>();
     cubit.initDashboard();
     if (widget.initialTab != 0) {
@@ -52,6 +56,7 @@ class _HomePageState extends State<HomePage> {
     return BlocSelector<HomeDashboardCubit, HomeDashboardState, int>(
       selector: (state) => state.currentTab,
       builder: (context, currentTab) {
+        _mountedTabs.add(currentTab);
         return PopScope(
           canPop: currentTab == 0,
           onPopInvokedWithResult: (bool didPop, dynamic result) {
@@ -59,71 +64,68 @@ class _HomePageState extends State<HomePage> {
             context.read<HomeDashboardCubit>().handleBackPress();
           },
           child: Scaffold(
-        backgroundColor: UIColors.bg,
-        body: Stack(
-          children: [
-            BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-              buildWhen: (prev, curr) => prev.currentTab != curr.currentTab,
-              builder: (context, state) {
-                return ClipRect(
+            backgroundColor: UIColors.bg,
+            body: Stack(
+              children: [
+                ClipRect(
                   child: IndexedStack(
-                    index: state.currentTab,
+                    index: currentTab,
                     children: [
-                      const HomeDashboardView(),
-                      const MapPage(),
-                      const ExplorePage(),
-                      FutureWorkWidget(
-                        title: 'Cài đặt hệ thống',
-                        subtitle:
-                            'Khu vực quản lý thiết lập cá nhân, thông báo và tùy chỉnh ứng dụng đang được hoàn thiện.',
-                        badgeText: 'Sắp ra mắt • COMING SOON',
-                        centerIcon: Icons.tune_rounded,
-                        onBack: () => context.read<HomeDashboardCubit>().setTab(0),
-                      ),
+                      _mountedTabs.contains(0)
+                          ? const HomeDashboardView()
+                          : const SizedBox.shrink(),
+                      _mountedTabs.contains(1)
+                          ? const MapPage()
+                          : const SizedBox.shrink(),
+                      _mountedTabs.contains(2)
+                          ? const ExplorePage()
+                          : const SizedBox.shrink(),
+                      _mountedTabs.contains(3)
+                          ? FutureWorkWidget(
+                              title: 'Cài đặt hệ thống',
+                              subtitle:
+                                  'Khu vực quản lý thiết lập cá nhân, thông báo và tùy chỉnh ứng dụng đang được hoàn thiện.',
+                              badgeText: 'Sắp ra mắt • COMING SOON',
+                              centerIcon: Icons.tune_rounded,
+                              onBack: () =>
+                                  context.read<HomeDashboardCubit>().setTab(0),
+                            )
+                          : const SizedBox.shrink(),
                     ],
                   ),
-                );
-              },
-            ),
-            BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-              buildWhen: (prev, curr) => prev.currentTab != curr.currentTab,
-              builder: (context, state) {
-                return Positioned(
+                ),
+                Positioned(
                   left: 20,
                   right: 20,
                   bottom: 24,
                   child: LiquidGlassBottomBar(
-                    currentTab: state.currentTab,
-                    onTabSelected: (index) {
-                      context.read<HomeDashboardCubit>().setTab(index);
-                    },
+                    currentTab: currentTab,
+                    onTabSelected: (index) =>
+                        context.read<HomeDashboardCubit>().setTab(index),
                     onAdvisorTap: () => _openAdvisor(context),
                   ),
-                );
-              },
+                ),
+                BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
+                  buildWhen: (prev, curr) =>
+                      prev.isChangingLocation != curr.isChangingLocation ||
+                      (curr.isChangingLocation &&
+                          prev.currentCity != curr.currentCity),
+                  builder: (context, state) {
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 250),
+                      child: state.isChangingLocation
+                          ? LocationLoadingOverlay(
+                              key: const ValueKey('location_loading_overlay'),
+                              cityName: state.currentCity.name,
+                            )
+                          : const SizedBox.shrink(),
+                    );
+                  },
+                ),
+              ],
             ),
-
-            BlocBuilder<HomeDashboardCubit, HomeDashboardState>(
-              buildWhen: (prev, curr) =>
-                  prev.isChangingLocation != curr.isChangingLocation ||
-                  (curr.isChangingLocation &&
-                      prev.currentCity != curr.currentCity),
-              builder: (context, state) {
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 250),
-                  child: state.isChangingLocation
-                      ? LocationLoadingOverlay(
-                          key: const ValueKey('location_loading_overlay'),
-                          cityName: state.currentCity.name,
-                        )
-                      : const SizedBox.shrink(),
-                );
-              },
-            ),
-          ],
-        ),
-      ),
-    );
+          ),
+        );
       },
     );
   }

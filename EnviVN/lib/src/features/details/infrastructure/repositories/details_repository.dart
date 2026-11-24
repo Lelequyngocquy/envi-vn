@@ -22,9 +22,16 @@ class DetailsRepository implements IDetailsRepository {
     bool forceRefresh = false,
   }) async {
     if (!forceRefresh) {
-      final validCache = storage.getCachedWeather(lat: latitude, lon: longitude, checkTtl: true);
+      final validCache = storage.getCachedWeather(
+        lat: latitude,
+        lon: longitude,
+        checkTtl: true,
+      );
       if (validCache != null) {
-        return BaseResult(success: true, data: DetailsModel.fromJson(validCache));
+        return BaseResult(
+          success: true,
+          data: DetailsModel.fromJson(validCache),
+        );
       }
     }
     try {
@@ -37,7 +44,10 @@ class DetailsRepository implements IDetailsRepository {
           'force_refresh': forceRefresh,
         },
       );
-      final response = await network.requestData(endpoint, showErrorToast: false);
+      final response = await network.requestData(
+        endpoint,
+        showErrorToast: false,
+      );
       if (response.isSuccess && response.data is Map) {
         final dataMap = Map<String, dynamic>.from(response.data as Map);
         final details = DetailsModel.fromJson(dataMap);
@@ -46,18 +56,34 @@ class DetailsRepository implements IDetailsRepository {
       }
       final cached = getCachedDetails(latitude: latitude, longitude: longitude);
       if (cached != null) {
-        return BaseResult(success: true, message: 'Đang hiển thị dữ liệu đã lưu ngoại tuyến', data: cached);
+        return BaseResult(
+          success: true,
+          message: 'Đang hiển thị dữ liệu đã lưu ngoại tuyến',
+          data: cached,
+        );
       }
-      return BaseResult(success: false, message: response.message ?? 'Không thể tải dự báo thời tiết chi tiết', data: const DetailsEntity());
+      return BaseResult(
+        success: false,
+        message: response.message ?? 'Không thể tải dự báo thời tiết chi tiết',
+        data: const DetailsEntity(),
+      );
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[DetailsRepository] Error: $e');
       }
       final cached = getCachedDetails(latitude: latitude, longitude: longitude);
       if (cached != null) {
-        return BaseResult(success: true, message: 'Đang hiển thị dữ liệu lưu trong bộ nhớ máy', data: cached);
+        return BaseResult(
+          success: true,
+          message: 'Đang hiển thị dữ liệu lưu trong bộ nhớ máy',
+          data: cached,
+        );
       }
-      return BaseResult(success: false, message: 'Không thể tải dự báo thời tiết lúc này. Vui lòng thử lại.', data: const DetailsEntity());
+      return BaseResult(
+        success: false,
+        message: 'Không thể tải dự báo thời tiết lúc này. Vui lòng thử lại.',
+        data: const DetailsEntity(),
+      );
     }
   }
 

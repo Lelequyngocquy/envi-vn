@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/widgets.dart';
+import 'package:envivn/src/features/map/domain/entities/map_filter.dart';
 import 'package:envivn/src/features/map/domain/entities/quick_city_target.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
 
 class MapTopControlBar extends StatelessWidget {
-  final String activeFilter;
-  final ValueChanged<String> onFilterChanged;
+  final MapFilter activeFilter;
+  final ValueChanged<MapFilter> onFilterChanged;
   final bool showHeatmap;
   final VoidCallback onToggleHeatmap;
   final String? selectedCityName;
@@ -69,28 +70,26 @@ class MapTopControlBar extends StatelessWidget {
                     children: [
                       _FilterGlassChip(
                         label: 'Tất cả',
-                        isActive: activeFilter == 'all',
-                        onTap: () => onFilterChanged('all'),
+                        isActive: activeFilter == MapFilter.all,
+                        onTap: () => onFilterChanged(MapFilter.all),
                       ),
                       const Gap(6),
                       _FilterGlassChip(
                         label: 'Tốt',
-                        isActive: activeFilter == 'good',
-                        onTap: () => onFilterChanged('good'),
+                        isActive: activeFilter == MapFilter.good,
+                        onTap: () => onFilterChanged(MapFilter.good),
                       ),
                       const Gap(6),
                       _FilterGlassChip(
                         label: 'Trung bình',
-                        isActive: activeFilter == 'moderate',
-                        onTap: () => onFilterChanged('moderate'),
+                        isActive: activeFilter == MapFilter.moderate,
+                        onTap: () => onFilterChanged(MapFilter.moderate),
                       ),
                       const Gap(6),
                       _FilterGlassChip(
                         label: 'Kém',
-                        isActive:
-                            activeFilter == 'unhealthy' ||
-                            activeFilter == 'warning',
-                        onTap: () => onFilterChanged('unhealthy'),
+                        isActive: activeFilter == MapFilter.unhealthy,
+                        onTap: () => onFilterChanged(MapFilter.unhealthy),
                       ),
                     ],
                   ),
@@ -171,12 +170,14 @@ class _FilterGlassChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? UIColors.primary : UIColors.white.withOpacity(0.08),
+          color: isActive
+              ? UIColors.primary
+              : UIColors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive
                 ? UIColors.primary
-                : UIColors.white.withOpacity(0.2),
+                : UIColors.white.withValues(alpha: 0.2),
           ),
         ),
         child: AppText.bold(
@@ -209,12 +210,14 @@ class _QuickCityGlassChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? UIColors.primary : UIColors.black.withOpacity(0.25),
+          color: isActive
+              ? UIColors.primary
+              : UIColors.black.withValues(alpha: 0.25),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isActive
                 ? UIColors.primary
-                : UIColors.white.withOpacity(0.18),
+                : UIColors.white.withValues(alpha: 0.18),
             width: isActive ? 1.5 : 1.0,
           ),
         ),

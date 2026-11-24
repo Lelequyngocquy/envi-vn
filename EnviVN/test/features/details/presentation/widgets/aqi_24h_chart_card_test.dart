@@ -16,14 +16,20 @@ void main() {
   }
 
   group('Aqi24hChartCard Widget Tests', () {
-    testWidgets('renders title, subtitle, AQI US tag and empty state when no points', (tester) async {
-      await tester.pumpWidget(buildTestWidget(points: []));
-      expect(find.text('Diễn biến nồng độ 24 giờ qua'), findsOneWidget);
-      expect(find.text('Chỉ số AQI theo từng khung giờ'), findsOneWidget);
-      expect(find.text('AQI US'), findsOneWidget);
-      expect(find.text('Chưa có dữ liệu diễn biến AQI 24 giờ'), findsOneWidget);
-      expect(find.byType(LineChart), findsNothing);
-    });
+    testWidgets(
+      'renders title, subtitle, AQI US tag and empty state when no points',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget(points: []));
+        expect(find.text('Diễn biến nồng độ 24 giờ qua'), findsOneWidget);
+        expect(find.text('Chỉ số AQI theo từng khung giờ'), findsOneWidget);
+        expect(find.text('AQI US'), findsOneWidget);
+        expect(
+          find.text('Chưa có dữ liệu diễn biến AQI 24 giờ'),
+          findsOneWidget,
+        );
+        expect(find.byType(LineChart), findsNothing);
+      },
+    );
 
     testWidgets(
       'renders LineChart with strongly typed hourly points without crashing',

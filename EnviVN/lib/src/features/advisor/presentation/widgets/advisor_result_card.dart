@@ -70,9 +70,12 @@ class AdvisorResultCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: level.color.withOpacity(0.16),
+              color: level.color.withValues(alpha: 0.16),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: level.color.withOpacity(0.4), width: 1),
+              border: Border.all(
+                color: level.color.withValues(alpha: 0.4),
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -105,10 +108,10 @@ class AdvisorResultCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: UIColors.white.withOpacity(0.04),
+                color: UIColors.white.withValues(alpha: 0.04),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: UIColors.white.withOpacity(0.08),
+                  color: UIColors.white.withValues(alpha: 0.08),
                   width: 0.8,
                 ),
               ),
@@ -146,10 +149,10 @@ class AdvisorResultCard extends StatelessWidget {
                           vertical: 8,
                         ),
                         decoration: BoxDecoration(
-                          color: badgeColor.withOpacity(0.08),
+                          color: badgeColor.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
-                            color: badgeColor.withOpacity(0.25),
+                            color: badgeColor.withValues(alpha: 0.25),
                             width: 0.8,
                           ),
                         ),
@@ -192,7 +195,9 @@ class AdvisorResultCard extends StatelessWidget {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: UIColors.white.withOpacity(0.06),
+                                    color: UIColors.white.withValues(
+                                      alpha: 0.06,
+                                    ),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: AppText.medium(
@@ -207,7 +212,7 @@ class AdvisorResultCard extends StatelessWidget {
                             AppText.regular(
                               '• ${evidence.detailComparison}',
                               size: 11.5,
-                              color: badgeColor.withOpacity(0.95),
+                              color: badgeColor.withValues(alpha: 0.95),
                               height: 1.35,
                             ),
                           ],
@@ -224,10 +229,10 @@ class AdvisorResultCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: UIColors.white.withOpacity(0.04),
+              color: UIColors.white.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: UIColors.white.withOpacity(0.08),
+                color: UIColors.white.withValues(alpha: 0.08),
                 width: 0.8,
               ),
             ),
@@ -269,7 +274,7 @@ class AdvisorResultCard extends StatelessWidget {
                           child: AppText.regular(
                             tip,
                             size: 12.5,
-                            color: UIColors.white.withOpacity(0.9),
+                            color: UIColors.white.withValues(alpha: 0.9),
                             height: 1.45,
                           ),
                         ),
@@ -286,10 +291,10 @@ class AdvisorResultCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
-                color: UIColors.warning.withOpacity(0.10),
+                color: UIColors.warning.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(
-                  color: UIColors.warning.withOpacity(0.35),
+                  color: UIColors.warning.withValues(alpha: 0.35),
                   width: 1,
                 ),
               ),

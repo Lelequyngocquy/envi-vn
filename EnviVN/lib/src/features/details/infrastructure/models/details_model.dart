@@ -89,15 +89,27 @@ class DetailsModel extends DetailsEntity {
     required bool isOfflineCache,
   }) {
     final current = Map<String, dynamic>.from(json['current'] as Map);
-    final hourly = json['hourly'] is Map ? Map<String, dynamic>.from(json['hourly'] as Map) : <String, dynamic>{};
-    final daily = json['daily'] is Map ? Map<String, dynamic>.from(json['daily'] as Map) : <String, dynamic>{};
+    final hourly = json['hourly'] is Map
+        ? Map<String, dynamic>.from(json['hourly'] as Map)
+        : <String, dynamic>{};
+    final daily = json['daily'] is Map
+        ? Map<String, dynamic>.from(json['daily'] as Map)
+        : <String, dynamic>{};
     final hourlyList = <HourlyDetailsPoint>[];
     if (hourly['time'] is List) {
       final times = hourly['time'] as List;
-      final temps = hourly['temperature_2m'] is List ? hourly['temperature_2m'] as List : const [];
-      final humids = hourly['relative_humidity_2m'] is List ? hourly['relative_humidity_2m'] as List : const [];
-      final rainProbs = hourly['precipitation_probability'] is List ? hourly['precipitation_probability'] as List : const [];
-      final codes = hourly['weather_code'] is List ? hourly['weather_code'] as List : const [];
+      final temps = hourly['temperature_2m'] is List
+          ? hourly['temperature_2m'] as List
+          : const [];
+      final humids = hourly['relative_humidity_2m'] is List
+          ? hourly['relative_humidity_2m'] as List
+          : const [];
+      final rainProbs = hourly['precipitation_probability'] is List
+          ? hourly['precipitation_probability'] as List
+          : const [];
+      final codes = hourly['weather_code'] is List
+          ? hourly['weather_code'] as List
+          : const [];
       final cutoff = DateTime.now().subtract(const Duration(hours: 1));
       for (int i = 0; i < times.length && hourlyList.length < 24; i++) {
         final pointTime = DateTime.tryParse(times[i].toString());
@@ -107,7 +119,9 @@ class DetailsModel extends DetailsEntity {
             time: pointTime,
             temperature: i < temps.length ? _toDouble(temps[i]) : 0.0,
             humidity: i < humids.length ? _toInt(humids[i]) : 0,
-            precipitationProbability: i < rainProbs.length ? _toInt(rainProbs[i]) : 0,
+            precipitationProbability: i < rainProbs.length
+                ? _toInt(rainProbs[i])
+                : 0,
             weatherCode: i < codes.length ? _toInt(codes[i]) : 0,
           ),
         );
@@ -116,10 +130,18 @@ class DetailsModel extends DetailsEntity {
     final dailyList = <DailyDetailsPoint>[];
     if (daily['time'] is List) {
       final dates = daily['time'] as List;
-      final codes = daily['weather_code'] is List ? daily['weather_code'] as List : const [];
-      final maxTemps = daily['temperature_2m_max'] is List ? daily['temperature_2m_max'] as List : const [];
-      final minTemps = daily['temperature_2m_min'] is List ? daily['temperature_2m_min'] as List : const [];
-      final rainSums = daily['precipitation_sum'] is List ? daily['precipitation_sum'] as List : const [];
+      final codes = daily['weather_code'] is List
+          ? daily['weather_code'] as List
+          : const [];
+      final maxTemps = daily['temperature_2m_max'] is List
+          ? daily['temperature_2m_max'] as List
+          : const [];
+      final minTemps = daily['temperature_2m_min'] is List
+          ? daily['temperature_2m_min'] as List
+          : const [];
+      final rainSums = daily['precipitation_sum'] is List
+          ? daily['precipitation_sum'] as List
+          : const [];
       for (int i = 0; i < dates.length && dailyList.length < 7; i++) {
         final date = DateTime.tryParse(dates[i].toString());
         if (date == null) continue;
@@ -129,7 +151,9 @@ class DetailsModel extends DetailsEntity {
             weatherCode: i < codes.length ? _toInt(codes[i]) : 0,
             maxTemp: i < maxTemps.length ? _toDouble(maxTemps[i]) : 0.0,
             minTemp: i < minTemps.length ? _toDouble(minTemps[i]) : 0.0,
-            precipitationSum: i < rainSums.length ? _toDouble(rainSums[i]) : 0.0,
+            precipitationSum: i < rainSums.length
+                ? _toDouble(rainSums[i])
+                : 0.0,
           ),
         );
       }

@@ -33,5 +33,18 @@ class ThermalHotspotEntity extends Equatable {
   double get brightnessCelsius => brightnessKelvin - 273.15;
 
   @override
-  List<Object?> get props => [id, locationName, province, latitude, longitude, brightnessKelvin, fireType, confidence, isActiveFire, proneSeason, detectedTime, description];
+  List<Object?> get props => [
+    id,
+    locationName,
+    province,
+    latitude,
+    longitude,
+    brightnessKelvin,
+    fireType,
+    confidence,
+    isActiveFire,
+    proneSeason,
+    detectedTime,
+    description,
+  ];
 }

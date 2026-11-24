@@ -8,8 +8,14 @@ import '../configs/env_config.dart';
 
 abstract class IAiChatBridge {
   Future<void> startSession({double? lat, double? lon});
-  Stream<String> generateResponseStream(String message, {List<Map<String, String>> history = const []});
-  Future<String> generateResponse(String message, {List<Map<String, String>> history = const []});
+  Stream<String> generateResponseStream(
+    String message, {
+    List<Map<String, String>> history = const [],
+  });
+  Future<String> generateResponse(
+    String message, {
+    List<Map<String, String>> history = const [],
+  });
   Future<void> close();
 }
 
@@ -22,8 +28,8 @@ class BackendSseBridge implements IAiChatBridge {
   double? _longitude;
 
   BackendSseBridge({http.Client? client})
-      : _client = client ?? http.Client(),
-        _ownsClient = client == null;
+    : _client = client ?? http.Client(),
+      _ownsClient = client == null;
 
   @override
   Future<void> startSession({double? lat, double? lon}) async {
@@ -31,7 +37,10 @@ class BackendSseBridge implements IAiChatBridge {
     _longitude = lon;
   }
 
-  List<Map<String, String>> _buildOutboundMessages(String message, List<Map<String, String>> history) {
+  List<Map<String, String>> _buildOutboundMessages(
+    String message,
+    List<Map<String, String>> history,
+  ) {
     // Strip any client system roles; Backend injects the authoritative system prompt.
     final sanitized = <Map<String, String>>[];
     for (final item in history) {
@@ -43,7 +52,10 @@ class BackendSseBridge implements IAiChatBridge {
     }
     final trimmed = message.trim();
     if (trimmed.isNotEmpty) {
-      final isDuplicateTail = sanitized.isNotEmpty && sanitized.last['role'] == 'user' && sanitized.last['content'] == trimmed;
+      final isDuplicateTail =
+          sanitized.isNotEmpty &&
+          sanitized.last['role'] == 'user' &&
+          sanitized.last['content'] == trimmed;
       if (!isDuplicateTail) {
         sanitized.add({'role': 'user', 'content': trimmed});
       }
@@ -73,12 +85,19 @@ class BackendSseBridge implements IAiChatBridge {
       if (_latitude != null) 'lat': _latitude,
       if (_longitude != null) 'lon': _longitude,
     });
-    final response = await _client.send(request).timeout(const Duration(seconds: 120));
+    final response = await _client
+        .send(request)
+        .timeout(const Duration(seconds: 120));
     if (response.statusCode != 200) {
       await response.stream.drain<void>();
-      throw http.ClientException('Backend returned status ${response.statusCode}', uri);
+      throw http.ClientException(
+        'Backend returned status ${response.statusCode}',
+        uri,
+      );
     }
-    await for (final line in response.stream.toStringStream().transform(const LineSplitter())) {
+    await for (final line in response.stream.toStringStream().transform(
+      const LineSplitter(),
+    )) {
       if (line.startsWith('data: ')) {
         final data = line.substring(6).trim();
         if (data == '[DONE]') break;
@@ -99,7 +118,10 @@ class BackendSseBridge implements IAiChatBridge {
     List<Map<String, String>> history = const [],
   }) async {
     final buffer = StringBuffer();
-    await for (final chunk in generateResponseStream(message, history: history)) {
+    await for (final chunk in generateResponseStream(
+      message,
+      history: history,
+    )) {
       buffer.write(chunk);
     }
     return buffer.toString();
@@ -115,7 +137,8 @@ class EdgeAiInferenceService implements IAiChatService {
   final IAiChatBridge _bridge;
   bool _isChatActive = false;
 
-  EdgeAiInferenceService({IAiChatBridge? bridge}) : _bridge = bridge ?? BackendSseBridge();
+  EdgeAiInferenceService({IAiChatBridge? bridge})
+    : _bridge = bridge ?? BackendSseBridge();
 
   @override
   bool get isChatActive => _isChatActive;

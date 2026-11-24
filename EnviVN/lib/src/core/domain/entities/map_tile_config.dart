@@ -11,8 +11,8 @@ class MapTileConfig extends Equatable {
   });
 
   const MapTileConfig.defaults()
-      : urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        userAgentPackageName = 'com.envivn.envivn';
+    : urlTemplate = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+      userAgentPackageName = 'com.envivn.envivn';
 
   @override
   List<Object?> get props => [urlTemplate, userAgentPackageName];

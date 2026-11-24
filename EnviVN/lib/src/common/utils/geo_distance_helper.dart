@@ -35,16 +35,93 @@ class GeoDistanceHelper {
     return '~${km.round()}km';
   }
 
-  /// Chuẩn hóa chuỗi tên địa phương để phục vụ tìm kiếm/so sánh:
-  /// Chuyển chữ thường, bỏ tiền tố "tp.", "thành phố", "tỉnh", "trạm"...
+  /// Normalizes Vietnamese location names (accent-free lowercase, stripped prefixes).
   static String normalizeLocationName(String input) {
-    return input
-        .toLowerCase()
+    return stripDiacritics(input.toLowerCase())
         .replaceAll('tp.', '')
-        .replaceAll('thành phố', '')
-        .replaceAll('tỉnh', '')
-        .replaceAll('trạm', '')
+        .replaceAll('thanh pho', '')
+        .replaceAll('tinh', '')
+        .replaceAll('tram', '')
         .trim();
+  }
+
+  /// Strips Vietnamese diacritics for accent-insensitive search and matching.
+  static String stripDiacritics(String value) {
+    const map = {
+      'à': 'a',
+      'á': 'a',
+      'ạ': 'a',
+      'ả': 'a',
+      'ã': 'a',
+      'â': 'a',
+      'ầ': 'a',
+      'ấ': 'a',
+      'ậ': 'a',
+      'ẩ': 'a',
+      'ẫ': 'a',
+      'ă': 'a',
+      'ằ': 'a',
+      'ắ': 'a',
+      'ặ': 'a',
+      'ẳ': 'a',
+      'ẵ': 'a',
+      'è': 'e',
+      'é': 'e',
+      'ẹ': 'e',
+      'ẻ': 'e',
+      'ẽ': 'e',
+      'ê': 'e',
+      'ề': 'e',
+      'ế': 'e',
+      'ệ': 'e',
+      'ể': 'e',
+      'ễ': 'e',
+      'ì': 'i',
+      'í': 'i',
+      'ị': 'i',
+      'ỉ': 'i',
+      'ĩ': 'i',
+      'ò': 'o',
+      'ó': 'o',
+      'ọ': 'o',
+      'ỏ': 'o',
+      'õ': 'o',
+      'ô': 'o',
+      'ồ': 'o',
+      'ố': 'o',
+      'ộ': 'o',
+      'ổ': 'o',
+      'ỗ': 'o',
+      'ơ': 'o',
+      'ờ': 'o',
+      'ớ': 'o',
+      'ợ': 'o',
+      'ở': 'o',
+      'ỡ': 'o',
+      'ù': 'u',
+      'ú': 'u',
+      'ụ': 'u',
+      'ủ': 'u',
+      'ũ': 'u',
+      'ư': 'u',
+      'ừ': 'u',
+      'ứ': 'u',
+      'ự': 'u',
+      'ử': 'u',
+      'ữ': 'u',
+      'ỳ': 'y',
+      'ý': 'y',
+      'ỵ': 'y',
+      'ỷ': 'y',
+      'ỹ': 'y',
+      'đ': 'd',
+    };
+    final buf = StringBuffer();
+    for (int i = 0; i < value.length; i++) {
+      final ch = value[i];
+      buf.write(map[ch] ?? ch);
+    }
+    return buf.toString();
   }
 
   /// Alias tiện lợi

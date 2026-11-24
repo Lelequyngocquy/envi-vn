@@ -17,7 +17,9 @@ class HealthAdvisoryCard extends StatelessWidget {
     final accentColor = info?.color ?? UIColors.textMuted;
     final iconData = !hasData
         ? Icons.info_outline_rounded
-        : (aqi > 100 ? Icons.warning_amber_rounded : Icons.verified_user_outlined);
+        : (aqi > 100
+              ? Icons.warning_amber_rounded
+              : Icons.verified_user_outlined);
     final advisoryText = hasData
         ? '${info!.healthAdvice} ${info.outdoorAdvice}'
         : 'Chưa có dữ liệu chất lượng không khí để đưa ra khuyến cáo sức khỏe.';
@@ -29,7 +31,10 @@ class HealthAdvisoryCard extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: accentColor.withOpacity(0.18), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: 0.18),
+              shape: BoxShape.circle,
+            ),
             child: AppIcon(iconData, color: accentColor, size: 24),
           ),
           const Gap(14),
@@ -38,12 +43,19 @@ class HealthAdvisoryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.bold(
-                  hasData ? 'Khuyến cáo sức khỏe (AQI $aqi • ${info!.label})' : 'Khuyến cáo sức khỏe',
+                  hasData
+                      ? 'Khuyến cáo sức khỏe (AQI $aqi • ${info!.label})'
+                      : 'Khuyến cáo sức khỏe',
                   size: 14,
                   color: UIColors.textPrimary,
                 ),
                 const Gap(6),
-                AppText.regular(advisoryText, size: 12, color: UIColors.textSecondary, height: 1.45),
+                AppText.regular(
+                  advisoryText,
+                  size: 12,
+                  color: UIColors.textSecondary,
+                  height: 1.45,
+                ),
               ],
             ),
           ),

@@ -46,7 +46,7 @@ class MapZoomControls extends StatelessWidget {
           Container(
             width: 20,
             height: 1,
-            color: UIColors.white.withOpacity(0.12),
+            color: UIColors.white.withValues(alpha: 0.12),
           ),
           Material(
             color: UIColors.transparent,

@@ -43,7 +43,7 @@ class EnvironmentalNotificationSheet extends StatelessWidget {
             height: 42,
             decoration: BoxDecoration(
               color: (hasAqiWarning ? aqiInfo.color : UIColors.primary)
-                  .withOpacity(0.18),
+                  .withValues(alpha: 0.18),
               shape: BoxShape.circle,
             ),
             child: Center(

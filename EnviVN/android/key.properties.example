@@ -1,0 +1,5 @@
+# Copy to android/key.properties (ignored by Git) or set ENVIVN_KEYSTORE_* env vars in CI.
+storeFile=upload-keystore.jks
+storePassword=CHANGE_ME
+keyAlias=upload
+keyPassword=CHANGE_ME

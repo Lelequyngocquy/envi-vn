@@ -251,7 +251,9 @@ class AdvisorEvidence {
       final weatherDesc = WmoWeatherRules.describe(weatherCode);
       final actuallyRaining = isRaining || precipitation > 0.1 || isRainCode;
       if (actuallyRaining) {
-        final rainStr = precipitation > 0.0 ? '$weatherDesc (${precipitation.toStringAsFixed(1)} mm)' : weatherDesc;
+        final rainStr = precipitation > 0.0
+            ? '$weatherDesc (${precipitation.toStringAsFixed(1)} mm)'
+            : weatherDesc;
         list.add(
           AdvisorEvidence(
             metricName: 'Thời tiết & Mưa',

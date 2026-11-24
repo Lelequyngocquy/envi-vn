@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/domain/entities/thermal_hotspot_entity.dart';
+import '../../domain/entities/map_filter.dart';
 import '../../domain/entities/map_layer_type.dart';
 import '../../domain/entities/quick_city_target.dart';
 import '../../domain/entities/station_entity.dart';
@@ -15,7 +16,7 @@ class MapState extends Equatable {
   final LatLng? targetLocation;
   final double? targetZoom;
   final String? selectedCityName;
-  final String activeFilter;
+  final MapFilter activeFilter;
   final bool showHeatmap;
   final String? errorMessage;
   final List<QuickCityTarget> quickCities;
@@ -41,7 +42,7 @@ class MapState extends Equatable {
     this.targetLocation,
     this.targetZoom,
     this.selectedCityName,
-    this.activeFilter = 'all',
+    this.activeFilter = MapFilter.all,
     this.showHeatmap = true,
     this.errorMessage,
     this.quickCities = QuickCityTarget.values,
@@ -62,16 +63,13 @@ class MapState extends Equatable {
   });
 
   List<StationEntity> get filteredStations {
-    if (activeFilter == 'good') {
-      return stations.where((st) => st.aqi <= 50).toList();
-    }
-    if (activeFilter == 'moderate') {
-      return stations.where((st) => st.aqi > 50 && st.aqi <= 100).toList();
-    }
-    if (activeFilter == 'unhealthy' || activeFilter == 'warning') {
-      return stations.where((st) => st.aqi > 100).toList();
-    }
-    return stations;
+    return switch (activeFilter) {
+      MapFilter.good => stations.where((st) => st.aqi <= 50).toList(),
+      MapFilter.moderate =>
+        stations.where((st) => st.aqi > 50 && st.aqi <= 100).toList(),
+      MapFilter.unhealthy => stations.where((st) => st.aqi > 100).toList(),
+      MapFilter.all => stations,
+    };
   }
 
   MapState copyWith({
@@ -84,7 +82,7 @@ class MapState extends Equatable {
     double? targetZoom,
     String? selectedCityName,
     bool clearSelectedCityName = false,
-    String? activeFilter,
+    MapFilter? activeFilter,
     bool? showHeatmap,
     String? errorMessage,
     bool clearErrorMessage = false,
@@ -125,7 +123,9 @@ class MapState extends Equatable {
           : (selectedCityName ?? this.selectedCityName),
       activeFilter: activeFilter ?? this.activeFilter,
       showHeatmap: showHeatmap ?? this.showHeatmap,
-      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
+      errorMessage: clearErrorMessage
+          ? null
+          : (errorMessage ?? this.errorMessage),
       quickCities: quickCities ?? this.quickCities,
       selectedQuickCity: clearSelectedQuickCity
           ? null

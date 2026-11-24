@@ -75,5 +75,11 @@ class AdvisorChatState extends Equatable {
   }
 
   @override
-  List<Object?> get props => [isAiEnabled, messages, isStreaming, errorMessage, suggestedQuestions];
+  List<Object?> get props => [
+    isAiEnabled,
+    messages,
+    isStreaming,
+    errorMessage,
+    suggestedQuestions,
+  ];
 }

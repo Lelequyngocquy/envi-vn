@@ -24,14 +24,19 @@ class _StubLocationService implements ILocationService {
   Future<bool> checkPermissionGranted() async => granted;
 
   @override
-  Future<LocationResult> getCurrentLocation() async => const LocationResult(latitude: 16.0544, longitude: 108.2022, cityName: 'Đà Nẵng');
+  Future<LocationResult> getCurrentLocation() async => const LocationResult(
+    latitude: 16.0544,
+    longitude: 108.2022,
+    cityName: 'Đà Nẵng',
+  );
 }
 
 class _CountingDetailsRepo implements IDetailsRepository {
   int fetchCount = 0;
 
   @override
-  DetailsEntity? getCachedDetails({double? latitude, double? longitude}) => null;
+  DetailsEntity? getCachedDetails({double? latitude, double? longitude}) =>
+      null;
 
   @override
   Future<BaseResult<DetailsEntity>> getDetailsForecast({
@@ -40,7 +45,10 @@ class _CountingDetailsRepo implements IDetailsRepository {
     bool forceRefresh = false,
   }) async {
     fetchCount++;
-    return const BaseResult(success: true, data: DetailsEntity(currentTemp: 28.0));
+    return const BaseResult(
+      success: true,
+      data: DetailsEntity(currentTemp: 28.0),
+    );
   }
 }
 
@@ -48,7 +56,10 @@ class _CountingAqiRepo implements IAirQualityRepository {
   int fetchCount = 0;
 
   @override
-  AirQualityEntity? getCachedAirQuality({double? latitude, double? longitude}) => null;
+  AirQualityEntity? getCachedAirQuality({
+    double? latitude,
+    double? longitude,
+  }) => null;
 
   @override
   Future<BaseResult<AirQualityEntity>> getAirQuality({
@@ -73,49 +84,119 @@ void main() {
       const det2 = DetailsEntity(currentTemp: 30.0, surfacePressure: 1011.0);
       expect(det1, equals(det2));
       final ts = DateTime.utc(2026, 11, 24);
-      final st1 = StationEntity(id: 's1', name: 'A', province: 'Hà Nội', latitude: 21.0, longitude: 105.8, aqi: 50, pm25: 12.0, pm10: 20.0, updatedAt: ts);
-      final st2 = StationEntity(id: 's1', name: 'A', province: 'Hà Nội', latitude: 21.0, longitude: 105.8, aqi: 50, pm25: 12.0, pm10: 20.0, updatedAt: ts);
+      final st1 = StationEntity(
+        id: 's1',
+        name: 'A',
+        province: 'Hà Nội',
+        latitude: 21.0,
+        longitude: 105.8,
+        aqi: 50,
+        pm25: 12.0,
+        pm10: 20.0,
+        updatedAt: ts,
+      );
+      final st2 = StationEntity(
+        id: 's1',
+        name: 'A',
+        province: 'Hà Nội',
+        latitude: 21.0,
+        longitude: 105.8,
+        aqi: 50,
+        pm25: 12.0,
+        pm10: 20.0,
+        updatedAt: ts,
+      );
       expect(st1, equals(st2));
-      const h1 = ThermalHotspotEntity(id: 'h1', locationName: 'Gia Lai', province: 'Gia Lai', latitude: 14.0, longitude: 108.0, brightnessKelvin: 330.0, fireType: 'Active', confidence: 90.0, isActiveFire: true, proneSeason: 'Dry', description: 'Test');
-      const h2 = ThermalHotspotEntity(id: 'h1', locationName: 'Gia Lai', province: 'Gia Lai', latitude: 14.0, longitude: 108.0, brightnessKelvin: 330.0, fireType: 'Active', confidence: 90.0, isActiveFire: true, proneSeason: 'Dry', description: 'Test');
+      const h1 = ThermalHotspotEntity(
+        id: 'h1',
+        locationName: 'Gia Lai',
+        province: 'Gia Lai',
+        latitude: 14.0,
+        longitude: 108.0,
+        brightnessKelvin: 330.0,
+        fireType: 'Active',
+        confidence: 90.0,
+        isActiveFire: true,
+        proneSeason: 'Dry',
+        description: 'Test',
+      );
+      const h2 = ThermalHotspotEntity(
+        id: 'h1',
+        locationName: 'Gia Lai',
+        province: 'Gia Lai',
+        latitude: 14.0,
+        longitude: 108.0,
+        brightnessKelvin: 330.0,
+        fireType: 'Active',
+        confidence: 90.0,
+        isActiveFire: true,
+        proneSeason: 'Dry',
+        description: 'Test',
+      );
       expect(h1, equals(h2));
     });
 
-    test('AppLocationCubit persists full location metadata without losing id, province, or originType', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final storage = LocalStorage(prefs: prefs);
-      final locCubit = AppLocationCubit(cacheStore: storage, locationService: _StubLocationService());
-      final customPin = AppLocationEntity.customPin(latitude: 14.025, longitude: 107.82, referenceProvince: 'Gia Lai', distanceKm: 4.2);
-      await locCubit.selectLocation(customPin);
-      final restored = storage.getSelectedLocation();
-      expect(restored, equals(customPin));
-      expect(restored?.originType, LocationOriginType.customMapPin);
-      expect(restored?.referenceProvinceName, 'Gia Lai');
-      expect(restored?.distanceToNearestProvinceKm, 4.2);
-      await locCubit.close();
-    });
+    test(
+      'AppLocationCubit persists full location metadata without losing id, province, or originType',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final storage = LocalStorage(prefs: prefs);
+        final locCubit = AppLocationCubit(
+          cacheStore: storage,
+          locationService: _StubLocationService(),
+        );
+        final customPin = AppLocationEntity.customPin(
+          latitude: 14.025,
+          longitude: 107.82,
+          referenceProvince: 'Gia Lai',
+          distanceKm: 4.2,
+        );
+        await locCubit.selectLocation(customPin);
+        final restored = storage.getSelectedLocation();
+        expect(restored, equals(customPin));
+        expect(restored?.originType, LocationOriginType.customMapPin);
+        expect(restored?.referenceProvinceName, 'Gia Lai');
+        expect(restored?.distanceToNearestProvinceKm, 4.2);
+        await locCubit.close();
+      },
+    );
 
-    test('HomeDashboardCubit reacts automatically to external AppLocationCubit updates from Map or Details', () async {
-      SharedPreferences.setMockInitialValues({});
-      final prefs = await SharedPreferences.getInstance();
-      final storage = LocalStorage(prefs: prefs);
-      final detailsRepo = _CountingDetailsRepo();
-      final aqiRepo = _CountingAqiRepo();
-      final locCubit = AppLocationCubit(cacheStore: storage, locationService: _StubLocationService());
-      final detailsCubit = DetailsCubit(repository: detailsRepo);
-      final aqiCubit = AirQualityCubit(repository: aqiRepo);
-      final homeCubit = HomeDashboardCubit(appLocationCubit: locCubit, detailsCubit: detailsCubit, airQualityCubit: aqiCubit);
-      final hue = AppLocationEntity.city(name: 'Huế', province: 'Thừa Thiên Huế', latitude: 16.4637, longitude: 107.5909);
-      await locCubit.syncLocationFromMap(hue);
-      await pumpEventQueue();
-      expect(homeCubit.state.currentCity, equals(hue));
-      expect(detailsRepo.fetchCount, 1);
-      expect(aqiRepo.fetchCount, 1);
-      await homeCubit.close();
-      await locCubit.close();
-      await detailsCubit.close();
-      await aqiCubit.close();
-    });
+    test(
+      'HomeDashboardCubit reacts automatically to external AppLocationCubit updates from Map or Details',
+      () async {
+        SharedPreferences.setMockInitialValues({});
+        final prefs = await SharedPreferences.getInstance();
+        final storage = LocalStorage(prefs: prefs);
+        final detailsRepo = _CountingDetailsRepo();
+        final aqiRepo = _CountingAqiRepo();
+        final locCubit = AppLocationCubit(
+          cacheStore: storage,
+          locationService: _StubLocationService(),
+        );
+        final detailsCubit = DetailsCubit(repository: detailsRepo);
+        final aqiCubit = AirQualityCubit(repository: aqiRepo);
+        final homeCubit = HomeDashboardCubit(
+          appLocationCubit: locCubit,
+          detailsCubit: detailsCubit,
+          airQualityCubit: aqiCubit,
+        );
+        final hue = AppLocationEntity.city(
+          name: 'Huế',
+          province: 'Thừa Thiên Huế',
+          latitude: 16.4637,
+          longitude: 107.5909,
+        );
+        await locCubit.syncLocationFromMap(hue);
+        await pumpEventQueue();
+        expect(homeCubit.state.currentCity, equals(hue));
+        expect(detailsRepo.fetchCount, 1);
+        expect(aqiRepo.fetchCount, 1);
+        await homeCubit.close();
+        await locCubit.close();
+        await detailsCubit.close();
+        await aqiCubit.close();
+      },
+    );
   });
 }

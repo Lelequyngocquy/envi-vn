@@ -15,15 +15,18 @@ class LocalStorage implements ICacheStore {
   static const String _keyLastUpdate = 'last_update_timestamp';
   static const String _keyLocationPermission = 'location_permission_granted';
   static const String _keyCachedThermalHotspots = 'cached_nasa_firms_hotspots';
-  static const String _keyThermalLastUpdate = 'nasa_firms_last_update_timestamp';
+  static const String _keyThermalLastUpdate =
+      'nasa_firms_last_update_timestamp';
 
   static const String _keyWeatherLruIndex = 'cached_weather_lru_keys';
   static const String _keyAqiLruIndex = 'cached_aqi_lru_keys';
   static const int maxCachedLocations = 12;
 
-  static String _weatherKey(double lat, double lon) => 'cached_weather_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+  static String _weatherKey(double lat, double lon) =>
+      'cached_weather_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
 
-  static String _aqiKey(double lat, double lon) => 'cached_aqi_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
+  static String _aqiKey(double lat, double lon) =>
+      'cached_aqi_${lat.toStringAsFixed(2)}_${lon.toStringAsFixed(2)}';
 
   Future<void> _trackLruKey(String indexKey, String cacheKey) async {
     final keys = List<String>.from(prefs.getStringList(indexKey) ?? const []);
@@ -43,7 +46,11 @@ class LocalStorage implements ICacheStore {
     double? lon,
     Duration ttl = const Duration(minutes: 30),
   }) async {
-    final entry = {'cachedAt': DateTime.now().millisecondsSinceEpoch, 'ttlMillis': ttl.inMilliseconds, 'data': data};
+    final entry = {
+      'cachedAt': DateTime.now().millisecondsSinceEpoch,
+      'ttlMillis': ttl.inMilliseconds,
+      'data': data,
+    };
     final encoded = jsonEncode(entry);
     await prefs.setString(_keyCachedWeather, encoded);
     if (lat != null && lon != null) {
@@ -96,7 +103,11 @@ class LocalStorage implements ICacheStore {
     double? lon,
     Duration ttl = const Duration(minutes: 30),
   }) async {
-    final entry = {'cachedAt': DateTime.now().millisecondsSinceEpoch, 'ttlMillis': ttl.inMilliseconds, 'data': data};
+    final entry = {
+      'cachedAt': DateTime.now().millisecondsSinceEpoch,
+      'ttlMillis': ttl.inMilliseconds,
+      'data': data,
+    };
     final encoded = jsonEncode(entry);
     await prefs.setString(_keyCachedAQI, encoded);
     if (lat != null && lon != null) {
@@ -144,7 +155,10 @@ class LocalStorage implements ICacheStore {
 
   @override
   Future<void> saveSelectedLocation(AppLocationEntity location) async {
-    await prefs.setString(_keySelectedCity, jsonEncode(location.toStorageJson()));
+    await prefs.setString(
+      _keySelectedCity,
+      jsonEncode(location.toStorageJson()),
+    );
   }
 
   @override
@@ -156,7 +170,10 @@ class LocalStorage implements ICacheStore {
 
   @override
   Future<void> saveSelectedCity(String cityName, double lat, double lon) async {
-    await prefs.setString(_keySelectedCity, jsonEncode({'name': cityName, 'lat': lat, 'lon': lon}));
+    await prefs.setString(
+      _keySelectedCity,
+      jsonEncode({'name': cityName, 'lat': lat, 'lon': lon}),
+    );
   }
 
   @override
@@ -193,9 +210,14 @@ class LocalStorage implements ICacheStore {
   }
 
   @override
-  Future<void> saveCachedThermalHotspots(List<Map<String, dynamic>> spots) async {
+  Future<void> saveCachedThermalHotspots(
+    List<Map<String, dynamic>> spots,
+  ) async {
     await prefs.setString(_keyCachedThermalHotspots, jsonEncode(spots));
-    await prefs.setInt(_keyThermalLastUpdate, DateTime.now().millisecondsSinceEpoch);
+    await prefs.setInt(
+      _keyThermalLastUpdate,
+      DateTime.now().millisecondsSinceEpoch,
+    );
   }
 
   @override

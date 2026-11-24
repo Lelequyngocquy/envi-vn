@@ -18,5 +18,12 @@ class LocationResult extends Equatable {
   });
 
   @override
-  List<Object?> get props => [latitude, longitude, cityName, isDefault, isPermissionDenied, errorMessage];
+  List<Object?> get props => [
+    latitude,
+    longitude,
+    cityName,
+    isDefault,
+    isPermissionDenied,
+    errorMessage,
+  ];
 }

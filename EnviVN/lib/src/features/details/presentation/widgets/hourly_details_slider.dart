@@ -75,13 +75,13 @@ class HourlyDetailsSlider extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: isFirst
-                        ? UIColors.secondary.withOpacity(0.12)
-                        : UIColors.white.withOpacity(0.03),
+                        ? UIColors.secondary.withValues(alpha: 0.12)
+                        : UIColors.white.withValues(alpha: 0.03),
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(
                       color: isFirst
-                          ? UIColors.secondary.withOpacity(0.4)
-                          : UIColors.white.withOpacity(0.06),
+                          ? UIColors.secondary.withValues(alpha: 0.4)
+                          : UIColors.white.withValues(alpha: 0.06),
                       width: 0.8,
                     ),
                   ),

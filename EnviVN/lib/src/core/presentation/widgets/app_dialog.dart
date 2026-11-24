@@ -1,87 +1,40 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/app_icon.dart';
 import 'package:envivn/src/core/presentation/widgets/app_text.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
-import 'package:gap/gap.dart';
 
-/// Hộp thoại Popup Dialog dùng chung cho toàn bộ ứng dụng EnviVN.
-/// Thiết kế theo ngôn ngữ Liquid Glass / Dark Navy đồng bộ: nền mờ viền sáng,
-/// hỗ trợ biểu tượng/header tùy biến, tiêu đề, nội dung dạng văn bản hoặc widget con,
-/// cùng hệ thống nút bấm linh hoạt (không nút, 1 nút back, hoặc 2 nút hành động).
+import 'app_dialog_actions.dart';
+
+/// Shared dark-glass modal dialog supporting custom headers, content, and actions.
 class AppDialog extends StatelessWidget {
-  /// Widget phần đầu (hình minh họa, animation spinner, custom widget).
   final Widget? header;
-
-  /// Biểu tượng icon hiển thị phía trên tiêu đề (dùng khi không truyền [header]).
   final IconData? icon;
-
-  /// Màu sắc của [icon] (mặc định [UIColors.primary]).
   final Color? iconColor;
-
-  /// Tiêu đề của dialog (dạng chuỗi).
   final String? title;
-
-  /// Widget tiêu đề tùy biến (dùng khi cần format phức tạp).
   final Widget? titleWidget;
-
-  /// Nội dung văn bản mô tả (dùng khi không có [childrenWidget] hoặc kèm theo).
   final String? content;
-
-  /// Widget nội dung con tùy biến (thay thế hoặc bổ sung cho [content]).
   final Widget? childrenWidget;
-
-  /// Tiêu đề nút bên trái / nút quay lại (mặc định là 'Hủy' khi có nút phải, hoặc 'Đóng' khi chỉ có 1 nút).
   final String? leftButtonTitle;
-
-  /// Hàm xử lý khi nhấn nút bên trái (mặc định là đóng dialog qua `Navigator.pop`).
   final VoidCallback? leftButtonFunc;
-
-  /// Có hiển thị nút bên trái hay không. Mặc định là `true` (nếu [showButtons] bật).
   final bool showLeftButton;
-
-  /// Tiêu đề nút bên phải / nút xác nhận.
   final String? rightButtonTitle;
-
-  /// Hàm xử lý khi nhấn nút bên phải.
   final VoidCallback? rightButtonFunc;
-
-  /// Màu sắc chính của nút bên phải (mặc định [UIColors.primary]).
   final Color? rightButtonColor;
-
-  /// Nút bên phải mang tính chất nguy hiểm / cảnh báo (sẽ chuyển màu đỏ [UIColors.error]).
   final bool isDestructive;
-
-  /// Cờ bật/tắt toàn bộ hàng nút (dùng cho dialog chỉ hiển thị thông tin hoặc loading).
   final bool showButtons;
-
-  /// Có cho phép đóng dialog khi chạm vào vùng nền mờ bên ngoài hay không.
   final bool barrierDismissible;
-
-  /// Hàm callback khi chạm vùng ngoài để hủy.
   final VoidCallback? onDismiss;
-
-  /// Có cho phép nhấn nút Back phần cứng / cử chỉ vuốt để thoát không (dùng [PopScope]).
   final bool canPop;
-
-  /// Màu ánh sáng nền tỏa xung quanh thẻ glass (mặc định ánh xanh Mint [UIColors.primary]).
   final Color? glowColor;
-
-  /// Chiều rộng tối đa của hộp thoại (mặc định 310.0).
   final double maxWidth;
-
-  /// Bán kính bo góc thẻ kính (mặc định 28.0).
   final double borderRadius;
-
-  /// Khoảng đệm bên trong thẻ kính.
   final EdgeInsetsGeometry padding;
-
-  /// Độ nhòe của lớp kính nền (mặc định 10.0).
   final double blurSigma;
-
-  /// Màu nền phủ mờ (mặc định đen 62%).
   final Color? barrierColor;
 
   const AppDialog({
@@ -112,7 +65,6 @@ class AppDialog extends StatelessWidget {
     this.barrierColor,
   });
 
-  /// Phương thức tĩnh hiển thị Popup Dialog mượt mà với hiệu ứng phóng to + mờ dần (Scale & Fade).
   static Future<T?> show<T>({
     required BuildContext context,
     Widget? header,
@@ -195,28 +147,32 @@ class AppDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool hasRightButton = rightButtonTitle != null && rightButtonTitle!.isNotEmpty;
-    final bool hasLeftButton = showButtons && showLeftButton;
-    final String effectiveLeftTitle = leftButtonTitle ?? (hasRightButton ? 'Hủy' : 'Đóng');
-    final VoidCallback effectiveLeftFunc = leftButtonFunc ?? () => Navigator.of(context).maybePop();
+    final hasRightButton =
+        rightButtonTitle != null && rightButtonTitle!.isNotEmpty;
+    final hasLeftButton = showButtons && showLeftButton;
+    final effectiveLeftTitle =
+        leftButtonTitle ?? (hasRightButton ? 'Hủy' : 'Đóng');
+    final effectiveLeftFunc =
+        leftButtonFunc ?? () => Navigator.of(context).maybePop();
+    final effectiveIconColor = iconColor ?? UIColors.primary;
     return PopScope(
       canPop: canPop,
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Blurred dark backdrop rendered beneath hit-testable dismiss layer.
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-            child: Container(color: barrierColor ?? UIColors.black.withOpacity(0.62)),
+            child: Container(
+              color: barrierColor ?? UIColors.black.withValues(alpha: 0.62),
+            ),
           ),
-          // Dismissible barrier above backdrop so outside taps work properly.
           GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: barrierDismissible ? (onDismiss ?? () => Navigator.of(context).maybePop()) : null,
+            onTap: barrierDismissible
+                ? (onDismiss ?? () => Navigator.of(context).maybePop())
+                : null,
             child: const SizedBox.expand(),
           ),
-
-          // 3. Thẻ kính trung tâm (Floating Glass Dialog Card)
           Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
@@ -226,20 +182,21 @@ class AppDialog extends StatelessWidget {
                   borderRadius: BorderRadius.circular(borderRadius),
                   boxShadow: [
                     BoxShadow(
-                      color: glowColor ?? UIColors.primary.withOpacity(0.24),
+                      color:
+                          glowColor ?? UIColors.primary.withValues(alpha: 0.24),
                       blurRadius: 40,
                       spreadRadius: 6,
                     ),
                   ],
                 ),
+                // Avoid double BackdropFilter since the full-screen barrier already blurs the backdrop.
                 child: AppGlass(
-                  enableBlur: true,
+                  enableBlur: false,
                   borderRadius: borderRadius,
                   padding: padding,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Header Widget / Icon
                       if (header != null) ...[
                         header!,
                         const Gap(20),
@@ -249,25 +206,20 @@ class AppDialog extends StatelessWidget {
                           height: 60,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: (iconColor ?? UIColors.primary).withOpacity(
-                              0.12,
-                            ),
+                            color: effectiveIconColor.withValues(alpha: 0.12),
                             border: Border.all(
-                              color: (iconColor ?? UIColors.primary)
-                                  .withOpacity(0.3),
+                              color: effectiveIconColor.withValues(alpha: 0.3),
                               width: 1.2,
                             ),
                           ),
                           child: AppIcon(
                             icon!,
                             size: 28,
-                            color: iconColor ?? UIColors.primary,
+                            color: effectiveIconColor,
                           ),
                         ),
                         const Gap(18),
                       ],
-
-                      // Title
                       if (titleWidget != null) ...[
                         titleWidget!,
                         const Gap(8),
@@ -280,11 +232,7 @@ class AppDialog extends StatelessWidget {
                         ),
                         const Gap(8),
                       ],
-
-                      // Children Widget (nếu có)
                       ?childrenWidget,
-
-                      // Text Content (nếu có và không truyền childrenWidget, hoặc dùng độc lập)
                       if (content != null) ...[
                         if (childrenWidget != null) const Gap(8),
                         AppText.regular(
@@ -295,16 +243,17 @@ class AppDialog extends StatelessWidget {
                           height: 1.45,
                         ),
                       ],
-
-                      // Action Buttons
                       if (showButtons && (hasLeftButton || hasRightButton)) ...[
                         const Gap(22),
-                        _buildButtonsRow(
-                          context,
+                        AppDialogActions(
                           hasLeft: hasLeftButton,
                           hasRight: hasRightButton,
                           leftTitle: effectiveLeftTitle,
                           leftFunc: effectiveLeftFunc,
+                          rightTitle: rightButtonTitle,
+                          rightFunc: rightButtonFunc,
+                          rightColor: rightButtonColor,
+                          isDestructive: isDestructive,
                         ),
                       ],
                     ],
@@ -314,139 +263,6 @@ class AppDialog extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildButtonsRow(
-    BuildContext context, {
-    required bool hasLeft,
-    required bool hasRight,
-    required String leftTitle,
-    required VoidCallback leftFunc,
-  }) {
-    // Trường hợp cả 2 nút (Left: Hủy/Thoát, Right: Xác nhận/Hành động)
-    if (hasLeft && hasRight) {
-      return Row(
-        children: [
-          Expanded(
-            child: Material(
-              color: UIColors.transparent,
-              child: InkWell(
-                onTap: leftFunc,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: UIColors.white.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: UIColors.white.withOpacity(0.14),
-                      width: 0.8,
-                    ),
-                  ),
-                  child: AppText.semiBold(
-                    leftTitle,
-                    size: 13.5,
-                    color: UIColors.white70,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const Gap(10),
-          Expanded(
-            child: Material(
-              color: UIColors.transparent,
-              child: InkWell(
-                onTap: rightButtonFunc,
-                borderRadius: BorderRadius.circular(16),
-                child: Container(
-                  height: 44,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: isDestructive
-                        ? UIColors.error
-                        : (rightButtonColor ?? UIColors.primary),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            (isDestructive
-                                    ? UIColors.error
-                                    : (rightButtonColor ?? UIColors.primary))
-                                .withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: AppText.bold(
-                    rightButtonTitle!,
-                    size: 13.5,
-                    color: isDestructive ? UIColors.white : UIColors.bg,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Trường hợp chỉ có 1 nút duy nhất (chiếm toàn bộ chiều ngang)
-    final isLeftOnly = hasLeft && !hasRight;
-    final title = isLeftOnly ? leftTitle : rightButtonTitle!;
-    final func = isLeftOnly ? leftFunc : rightButtonFunc;
-
-    return SizedBox(
-      width: double.infinity,
-      child: Material(
-        color: UIColors.transparent,
-        child: InkWell(
-          onTap: func,
-          borderRadius: BorderRadius.circular(16),
-          child: Container(
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: isLeftOnly
-                  ? UIColors.white.withOpacity(0.1)
-                  : (isDestructive
-                        ? UIColors.error
-                        : (rightButtonColor ?? UIColors.primary)),
-              borderRadius: BorderRadius.circular(16),
-              border: isLeftOnly
-                  ? Border.all(
-                      color: UIColors.white.withOpacity(0.14),
-                      width: 0.8,
-                    )
-                  : null,
-              boxShadow: isLeftOnly
-                  ? null
-                  : [
-                      BoxShadow(
-                        color:
-                            (isDestructive
-                                    ? UIColors.error
-                                    : (rightButtonColor ?? UIColors.primary))
-                                .withOpacity(0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-            ),
-            child: AppText(
-              title,
-              size: 13.5,
-              fontWeight: isLeftOnly ? FontWeight.w600 : FontWeight.bold,
-              color: isLeftOnly
-                  ? UIColors.white
-                  : (isDestructive ? UIColors.white : UIColors.bg),
-            ),
-          ),
-        ),
       ),
     );
   }

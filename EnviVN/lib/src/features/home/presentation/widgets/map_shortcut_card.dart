@@ -24,7 +24,7 @@ class MapShortcutCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: UIColors.secondary.withOpacity(0.18),
+                color: UIColors.secondary.withValues(alpha: 0.18),
                 shape: BoxShape.circle,
               ),
               child: const AppIcon(

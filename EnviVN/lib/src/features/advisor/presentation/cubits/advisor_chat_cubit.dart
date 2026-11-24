@@ -12,7 +12,8 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
   StreamSubscription<String>? _streamSub;
   Completer<void>? _activeCompleter;
 
-  AdvisorChatCubit({required this.inferenceService}) : super(const AdvisorChatState());
+  AdvisorChatCubit({required this.inferenceService})
+    : super(const AdvisorChatState());
 
   void toggleAi(bool enabled) {
     if (isClosed) return;
@@ -21,12 +22,16 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
 
   Future<void> initChat({required AppLocationEntity location}) async {
     try {
-      await inferenceService.startChatSession(lat: location.latitude, lon: location.longitude);
+      await inferenceService.startChatSession(
+        lat: location.latitude,
+        lon: location.longitude,
+      );
       if (isClosed) return;
       if (state.messages.isEmpty) {
         final greeting = ChatMessageItem(
           id: 'welcome_${DateTime.now().millisecondsSinceEpoch}',
-          text: 'Xin chào! Tôi là Trợ lý AI EnviVN. Tôi đã sẵn sàng phân tích dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?',
+          text:
+              'Xin chào! Tôi là Trợ lý AI EnviVN. Tôi đã sẵn sàng phân tích dữ liệu môi trường và thời tiết tại ${location.displayName}. Bạn cần tôi tư vấn điều gì?',
           isUser: false,
           timestamp: DateTime.now(),
         );
@@ -34,7 +39,11 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
       }
     } catch (_) {
       if (isClosed) return;
-      emit(state.copyWith(errorMessage: 'Không thể khởi chạy phiên trợ lý AI lúc này.'));
+      emit(
+        state.copyWith(
+          errorMessage: 'Không thể khởi chạy phiên trợ lý AI lúc này.',
+        ),
+      );
     }
   }
 
@@ -51,7 +60,10 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
       if (msg.id.startsWith('welcome_') || msg.isStreaming) continue;
       final content = msg.text.trim();
       if (content.isEmpty) continue;
-      history.add({'role': msg.isUser ? 'user' : 'assistant', 'content': content});
+      history.add({
+        'role': msg.isUser ? 'user' : 'assistant',
+        'content': content,
+      });
     }
     if (history.length > _maxHistoryTurns) {
       return history.sublist(history.length - _maxHistoryTurns);
@@ -63,70 +75,126 @@ class AdvisorChatCubit extends Cubit<AdvisorChatState> {
     final trimmed = text.trim();
     if (trimmed.isEmpty || state.isStreaming || isClosed) return;
     final recentHistory = _buildRecentHistory();
-    final userMsg = ChatMessageItem(id: 'user_${DateTime.now().millisecondsSinceEpoch}', text: trimmed, isUser: true, timestamp: DateTime.now());
+    final userMsg = ChatMessageItem(
+      id: 'user_${DateTime.now().millisecondsSinceEpoch}',
+      text: trimmed,
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
     final botMsgId = 'bot_${DateTime.now().millisecondsSinceEpoch}';
-    final botMsg = ChatMessageItem(id: botMsgId, text: '', isUser: false, timestamp: DateTime.now(), isStreaming: true);
-    final updatedMessages = List<ChatMessageItem>.from(state.messages)..add(userMsg)..add(botMsg);
-    emit(state.copyWith(messages: updatedMessages, isStreaming: true, clearError: true));
+    final botMsg = ChatMessageItem(
+      id: botMsgId,
+      text: '',
+      isUser: false,
+      timestamp: DateTime.now(),
+      isStreaming: true,
+    );
+    final updatedMessages = List<ChatMessageItem>.from(state.messages)
+      ..add(userMsg)
+      ..add(botMsg);
+    emit(
+      state.copyWith(
+        messages: updatedMessages,
+        isStreaming: true,
+        clearError: true,
+      ),
+    );
     final buffer = StringBuffer();
     final completer = Completer<void>();
     _activeCompleter = completer;
-    const errorFallbackText = 'Không thể kết nối máy chủ AI lúc này. Vui lòng kiểm tra kết nối và thử lại.';
+    const errorFallbackText =
+        'Không thể kết nối máy chủ AI lúc này. Vui lòng kiểm tra kết nối và thử lại.';
     try {
       await _streamSub?.cancel();
       if (isClosed) {
         _completeActiveStream();
         return;
       }
-      _streamSub = inferenceService.sendMessageStream(trimmed, history: recentHistory).listen(
-        (chunk) {
-          if (isClosed) return;
-          buffer.write(chunk);
-          final currentList = List<ChatMessageItem>.from(state.messages);
-          final index = currentList.indexWhere((m) => m.id == botMsgId);
-          if (index != -1) {
-            currentList[index] = currentList[index].copyWith(text: buffer.toString());
-            emit(state.copyWith(messages: currentList));
-          }
-        },
-        onDone: () {
-          if (!isClosed) {
-            final currentList = List<ChatMessageItem>.from(state.messages);
-            final index = currentList.indexWhere((m) => m.id == botMsgId);
-            if (index != -1) {
-              currentList[index] = currentList[index].copyWith(text: buffer.toString(), isStreaming: false);
-              emit(state.copyWith(messages: currentList, isStreaming: false));
-            } else {
-              emit(state.copyWith(isStreaming: false));
-            }
-          }
-          _completeActiveStream();
-        },
-        onError: (_) {
-          if (!isClosed) {
-            final currentList = List<ChatMessageItem>.from(state.messages);
-            final index = currentList.indexWhere((m) => m.id == botMsgId);
-            if (index != -1) {
-              currentList[index] = currentList[index].copyWith(text: buffer.isNotEmpty ? buffer.toString() : errorFallbackText, isStreaming: false);
-              emit(state.copyWith(messages: currentList, isStreaming: false, errorMessage: errorFallbackText));
-            } else {
-              emit(state.copyWith(isStreaming: false, errorMessage: errorFallbackText));
-            }
-          }
-          _completeActiveStream();
-        },
-        cancelOnError: true,
-      );
+      _streamSub = inferenceService
+          .sendMessageStream(trimmed, history: recentHistory)
+          .listen(
+            (chunk) {
+              if (isClosed) return;
+              buffer.write(chunk);
+              final currentList = List<ChatMessageItem>.from(state.messages);
+              final index = currentList.indexWhere((m) => m.id == botMsgId);
+              if (index != -1) {
+                currentList[index] = currentList[index].copyWith(
+                  text: buffer.toString(),
+                );
+                emit(state.copyWith(messages: currentList));
+              }
+            },
+            onDone: () {
+              if (!isClosed) {
+                final currentList = List<ChatMessageItem>.from(state.messages);
+                final index = currentList.indexWhere((m) => m.id == botMsgId);
+                if (index != -1) {
+                  currentList[index] = currentList[index].copyWith(
+                    text: buffer.toString(),
+                    isStreaming: false,
+                  );
+                  emit(
+                    state.copyWith(messages: currentList, isStreaming: false),
+                  );
+                } else {
+                  emit(state.copyWith(isStreaming: false));
+                }
+              }
+              _completeActiveStream();
+            },
+            onError: (_) {
+              if (!isClosed) {
+                final currentList = List<ChatMessageItem>.from(state.messages);
+                final index = currentList.indexWhere((m) => m.id == botMsgId);
+                if (index != -1) {
+                  currentList[index] = currentList[index].copyWith(
+                    text: buffer.isNotEmpty
+                        ? buffer.toString()
+                        : errorFallbackText,
+                    isStreaming: false,
+                  );
+                  emit(
+                    state.copyWith(
+                      messages: currentList,
+                      isStreaming: false,
+                      errorMessage: errorFallbackText,
+                    ),
+                  );
+                } else {
+                  emit(
+                    state.copyWith(
+                      isStreaming: false,
+                      errorMessage: errorFallbackText,
+                    ),
+                  );
+                }
+              }
+              _completeActiveStream();
+            },
+            cancelOnError: true,
+          );
       await completer.future;
     } catch (_) {
       if (!isClosed) {
         final currentList = List<ChatMessageItem>.from(state.messages);
         final index = currentList.indexWhere((m) => m.id == botMsgId);
         if (index != -1) {
-          currentList[index] = currentList[index].copyWith(text: errorFallbackText, isStreaming: false);
-          emit(state.copyWith(messages: currentList, isStreaming: false, errorMessage: errorFallbackText));
+          currentList[index] = currentList[index].copyWith(
+            text: errorFallbackText,
+            isStreaming: false,
+          );
+          emit(
+            state.copyWith(
+              messages: currentList,
+              isStreaming: false,
+              errorMessage: errorFallbackText,
+            ),
+          );
         } else {
-          emit(state.copyWith(isStreaming: false, errorMessage: errorFallbackText));
+          emit(
+            state.copyWith(isStreaming: false, errorMessage: errorFallbackText),
+          );
         }
       }
       _completeActiveStream();

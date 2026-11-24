@@ -28,7 +28,19 @@ class DetailsEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [currentTemp, apparentTemp, relativeHumidity, precipitation, weatherCode, windSpeed, uvIndex, surfacePressure, hourlyForecast, dailyForecast, isOfflineCache];
+  List<Object?> get props => [
+    currentTemp,
+    apparentTemp,
+    relativeHumidity,
+    precipitation,
+    weatherCode,
+    windSpeed,
+    uvIndex,
+    surfacePressure,
+    hourlyForecast,
+    dailyForecast,
+    isOfflineCache,
+  ];
 }
 
 class HourlyDetailsPoint extends Equatable {
@@ -47,7 +59,13 @@ class HourlyDetailsPoint extends Equatable {
   });
 
   @override
-  List<Object?> get props => [time, temperature, humidity, precipitationProbability, weatherCode];
+  List<Object?> get props => [
+    time,
+    temperature,
+    humidity,
+    precipitationProbability,
+    weatherCode,
+  ];
 }
 
 class DailyDetailsPoint extends Equatable {
@@ -66,5 +84,11 @@ class DailyDetailsPoint extends Equatable {
   });
 
   @override
-  List<Object?> get props => [date, weatherCode, maxTemp, minTemp, precipitationSum];
+  List<Object?> get props => [
+    date,
+    weatherCode,
+    maxTemp,
+    minTemp,
+    precipitationSum,
+  ];
 }

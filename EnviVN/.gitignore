@@ -48,6 +48,13 @@ app.*.map.json
 .env
 .env*.local
 !.env_example
+dart_define.json
+dart_define.*.json
+!dart_define.example.json
+android/key.properties
+!android/key.properties.example
+*.jks
+*.keystore
 
 # Documents & Text files
 *.md

@@ -17,7 +17,8 @@ class LocationService implements ILocationService {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) return false;
       final permission = await Geolocator.checkPermission();
-      return permission == LocationPermission.whileInUse || permission == LocationPermission.always;
+      return permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
     } catch (_) {
       return false;
     }
@@ -30,7 +31,8 @@ class LocationService implements ILocationService {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      if (permission == LocationPermission.denied || permission == LocationPermission.deniedForever) {
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
         return LocationResult(
           latitude: defaultLat,
           longitude: defaultLon,
@@ -50,18 +52,35 @@ class LocationService implements ILocationService {
           cityName: 'Hà Nội',
           isDefault: true,
           isPermissionDenied: false,
-          errorMessage: 'Dịch vụ định vị GPS trên thiết bị đang tắt. Sử dụng vị trí mặc định (Hà Nội).',
+          errorMessage:
+              'Dịch vụ định vị GPS trên thiết bị đang tắt. Sử dụng vị trí mặc định (Hà Nội).',
         );
       }
-      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
         final lastKnown = await Geolocator.getLastKnownPosition();
-        if (lastKnown != null && DateTime.now().difference(lastKnown.timestamp).abs() <= _lastKnownMaxAge) {
-          return LocationResult(latitude: lastKnown.latitude, longitude: lastKnown.longitude, isDefault: false, isPermissionDenied: false);
+        if (lastKnown != null &&
+            DateTime.now().difference(lastKnown.timestamp).abs() <=
+                _lastKnownMaxAge) {
+          return LocationResult(
+            latitude: lastKnown.latitude,
+            longitude: lastKnown.longitude,
+            isDefault: false,
+            isPermissionDenied: false,
+          );
         }
         final position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: Duration(seconds: 5)),
+          locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.medium,
+            timeLimit: Duration(seconds: 5),
+          ),
         );
-        return LocationResult(latitude: position.latitude, longitude: position.longitude, isDefault: false, isPermissionDenied: false);
+        return LocationResult(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          isDefault: false,
+          isPermissionDenied: false,
+        );
       }
     } catch (e) {
       if (kDebugMode) {
@@ -74,7 +93,8 @@ class LocationService implements ILocationService {
       cityName: 'Hà Nội',
       isDefault: true,
       isPermissionDenied: false,
-      errorMessage: 'Không thể nhận diện vị trí GPS. Sử dụng vị trí mặc định (Hà Nội).',
+      errorMessage:
+          'Không thể nhận diện vị trí GPS. Sử dụng vị trí mặc định (Hà Nội).',
     );
   }
 }

@@ -52,7 +52,7 @@ class _LocationLoadingOverlayState extends State<LocationLoadingOverlay>
       canPop: false,
       barrierDismissible: false,
       showButtons: false,
-      glowColor: UIColors.primary.withOpacity(0.24),
+      glowColor: UIColors.primary.withValues(alpha: 0.24),
       header: SizedBox(
         width: 72,
         height: 72,
@@ -65,7 +65,7 @@ class _LocationLoadingOverlayState extends State<LocationLoadingOverlay>
               height: 66,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: UIColors.primary.withOpacity(0.08),
+                color: UIColors.primary.withValues(alpha: 0.08),
               ),
             ),
 
@@ -87,7 +87,7 @@ class _LocationLoadingOverlayState extends State<LocationLoadingOverlay>
               child: Container(
                 padding: const EdgeInsets.all(7),
                 decoration: BoxDecoration(
-                  color: UIColors.primary.withOpacity(0.18),
+                  color: UIColors.primary.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                 ),
                 child: const AppIcon(
@@ -108,9 +108,11 @@ class _LocationLoadingOverlayState extends State<LocationLoadingOverlay>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
-              color: UIColors.primary.withOpacity(0.15),
+              color: UIColors.primary.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: UIColors.primary.withOpacity(0.35)),
+              border: Border.all(
+                color: UIColors.primary.withValues(alpha: 0.35),
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

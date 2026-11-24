@@ -60,8 +60,17 @@ void main() {
             BlocProvider.value(value: chatCubit),
           ],
           child: AdvisorModalSheet(
-            location: AppLocationEntity.city(name: 'Hà Nội', province: 'Hà Nội', latitude: 21.0285, longitude: 105.8542),
-            weather: const DetailsEntity(currentTemp: 28.0, relativeHumidity: 65, precipitation: 0.0),
+            location: AppLocationEntity.city(
+              name: 'Hà Nội',
+              province: 'Hà Nội',
+              latitude: 21.0285,
+              longitude: 105.8542,
+            ),
+            weather: const DetailsEntity(
+              currentTemp: 28.0,
+              relativeHumidity: 65,
+              precipitation: 0.0,
+            ),
             airQuality: const AirQualityEntity(usAqi: 75, pm25: 25.0),
           ),
         ),
@@ -70,28 +79,40 @@ void main() {
   }
 
   group('AdvisorModalSheet Dual Mode Widget Tests', () {
-    testWidgets('renders toggle switch and rule-based cards by default when AI is OFF', (tester) async {
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-      expect(find.text('Trợ lý AI EnviVN'), findsOneWidget);
-      expect(find.text('Quy tắc cố định WHO/EPA (0ms)'), findsOneWidget);
-      expect(find.byType(Switch), findsOneWidget);
-      expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
-      expect(find.text('Chạy bộ ngoài trời'), findsOneWidget);
-    });
+    testWidgets(
+      'renders toggle switch and rule-based cards by default when AI is OFF',
+      (tester) async {
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+        expect(find.text('Trợ lý AI EnviVN'), findsOneWidget);
+        expect(find.text('Quy tắc cố định WHO/EPA (0ms)'), findsOneWidget);
+        expect(find.byType(Switch), findsOneWidget);
+        expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+        expect(find.text('Chạy bộ ngoài trời'), findsOneWidget);
+      },
+    );
 
-    testWidgets('toggling switch opens AI chat conversation immediately without legacy download card', (tester) async {
-      await chatCubit.initChat(location: AppLocationEntity.defaultLocation);
-      await tester.pumpWidget(buildTestWidget());
-      await tester.pumpAndSettle();
-      await tester.tap(find.byType(Switch));
-      await tester.pumpAndSettle();
-      expect(chatCubit.state.isAiEnabled, isTrue);
-      expect(find.text('Local AI Node • Phản hồi thông minh'), findsOneWidget);
-      expect(find.text('Gói trí tuệ nhân tạo Gemma 2B'), findsNothing);
-      expect(find.text('Cố vấn AI EnviVN'), findsOneWidget);
-      expect(find.byType(TextField), findsOneWidget);
-      expect(find.text('Hỏi về không khí, chạy bộ, ngập úng...'), findsOneWidget);
-    });
+    testWidgets(
+      'toggling switch opens AI chat conversation immediately without legacy download card',
+      (tester) async {
+        await chatCubit.initChat(location: AppLocationEntity.defaultLocation);
+        await tester.pumpWidget(buildTestWidget());
+        await tester.pumpAndSettle();
+        await tester.tap(find.byType(Switch));
+        await tester.pumpAndSettle();
+        expect(chatCubit.state.isAiEnabled, isTrue);
+        expect(
+          find.text('Local AI Node • Phản hồi thông minh'),
+          findsOneWidget,
+        );
+        expect(find.text('Gói trí tuệ nhân tạo Gemma 2B'), findsNothing);
+        expect(find.text('Cố vấn AI EnviVN'), findsOneWidget);
+        expect(find.byType(TextField), findsOneWidget);
+        expect(
+          find.text('Hỏi về không khí, chạy bộ, ngập úng...'),
+          findsOneWidget,
+        );
+      },
+    );
   });
 }

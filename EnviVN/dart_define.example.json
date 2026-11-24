@@ -1,0 +1,9 @@
+{
+  "APP_NAME": "EnviVN",
+  "APP_ENV": "production",
+  "APP_DEBUG": "false",
+  "OSM_TILE_URL": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  "MAP_USER_AGENT": "com.envivn.envivn",
+  "BACKEND_BASE_URL": "https://api.envivn.example.com",
+  "CLIENT_API_KEY": ""
+}

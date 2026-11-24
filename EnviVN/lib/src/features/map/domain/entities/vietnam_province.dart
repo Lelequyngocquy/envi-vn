@@ -74,11 +74,19 @@ enum VietnamProvince {
 
   const VietnamProvince(this.provinceName, this.latitude, this.longitude);
 
-  static ({VietnamProvince province, double distanceKm}) findClosest(double lat, double lon) {
+  static ({VietnamProvince province, double distanceKm}) findClosest(
+    double lat,
+    double lon,
+  ) {
     VietnamProvince closest = VietnamProvince.haNoi;
     double minD = double.infinity;
     for (final p in VietnamProvince.values) {
-      final d = GeoDistanceHelper.distanceInKm(lat, lon, p.latitude, p.longitude);
+      final d = GeoDistanceHelper.distanceInKm(
+        lat,
+        lon,
+        p.latitude,
+        p.longitude,
+      );
       if (d < minD) {
         minD = d;
         closest = p;

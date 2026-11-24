@@ -15,7 +15,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _scaleAnimation;
   late final Animation<double> _opacityAnimation;
@@ -24,14 +25,28 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400));
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.8, curve: Curves.easeIn)));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
+    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeIn),
+      ),
+    );
     _controller.forward();
     _navigationTimer = Timer(const Duration(milliseconds: 1800), () {
       if (!mounted) return;
       final hasSaved = context.read<AppLocationCubit>().hasSavedLocation;
-      Navigator.pushReplacementNamed(context, hasSaved ? RouterPath.home : RouterPath.permission);
+      Navigator.pushReplacementNamed(
+        context,
+        hasSaved ? RouterPath.home : RouterPath.permission,
+      );
     });
   }
 
@@ -52,7 +67,10 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
           builder: (context, child) {
             return Opacity(
               opacity: _opacityAnimation.value,
-              child: Transform.scale(scale: _scaleAnimation.value, child: const SplashBrandingWidget()),
+              child: Transform.scale(
+                scale: _scaleAnimation.value,
+                child: const SplashBrandingWidget(),
+              ),
             );
           },
         ),

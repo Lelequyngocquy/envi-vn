@@ -43,22 +43,38 @@ class RestfulRequest {
     };
     try {
       uri = Uri.parse('$activeBaseUrl${endpoint.path}');
-      if (endpoint.method == HttpMethod.get && endpoint.params is Map<String, dynamic>) {
+      if (endpoint.method == HttpMethod.get &&
+          endpoint.params is Map<String, dynamic>) {
         final mergedParams = <String, String>{
           ...uri.queryParameters,
-          ...(endpoint.params as Map<String, dynamic>).map((k, v) => MapEntry(k, v.toString())),
+          ...(endpoint.params as Map<String, dynamic>).map(
+            (k, v) => MapEntry(k, v.toString()),
+          ),
         };
         uri = uri.replace(queryParameters: mergedParams);
       }
-      body = (endpoint.method != HttpMethod.get && endpoint.params != null) ? jsonEncode(endpoint.params) : null;
+      body = (endpoint.method != HttpMethod.get && endpoint.params != null)
+          ? jsonEncode(endpoint.params)
+          : null;
     } catch (e) {
       if (kDebugMode) {
-        NetworkLogger.logError(url: '$activeBaseUrl${endpoint.path}', error: 'Invalid request: $e');
+        NetworkLogger.logError(
+          url: '$activeBaseUrl${endpoint.path}',
+          error: 'Invalid request: $e',
+        );
       }
-      return const BaseResponse(isSuccess: false, message: 'Yêu cầu dữ liệu không hợp lệ.');
+      return const BaseResponse(
+        isSuccess: false,
+        message: 'Yêu cầu dữ liệu không hợp lệ.',
+      );
     }
     if (kDebugMode) {
-      NetworkLogger.logSend(url: uri.toString(), method: endpoint.method.value, headers: headers, params: endpoint.params);
+      NetworkLogger.logSend(
+        url: uri.toString(),
+        method: endpoint.method.value,
+        headers: headers,
+        params: endpoint.params,
+      );
     }
     try {
       http.Response response;
@@ -67,13 +83,19 @@ class RestfulRequest {
           response = await _client.get(uri, headers: headers).timeout(timeout);
           break;
         case HttpMethod.post:
-          response = await _client.post(uri, headers: headers, body: body).timeout(timeout);
+          response = await _client
+              .post(uri, headers: headers, body: body)
+              .timeout(timeout);
           break;
         case HttpMethod.put:
-          response = await _client.put(uri, headers: headers, body: body).timeout(timeout);
+          response = await _client
+              .put(uri, headers: headers, body: body)
+              .timeout(timeout);
           break;
         case HttpMethod.delete:
-          response = await _client.delete(uri, headers: headers, body: body).timeout(timeout);
+          response = await _client
+              .delete(uri, headers: headers, body: body)
+              .timeout(timeout);
           break;
       }
       dynamic json;
@@ -83,7 +105,11 @@ class RestfulRequest {
         json = response.body;
       }
       if (kDebugMode) {
-        NetworkLogger.logReceive(url: uri.toString(), statusCode: response.statusCode, body: json);
+        NetworkLogger.logReceive(
+          url: uri.toString(),
+          statusCode: response.statusCode,
+          body: json,
+        );
       }
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return BaseResponse.fromSuccessJson(json);
@@ -93,17 +119,27 @@ class RestfulRequest {
       if (kDebugMode) {
         NetworkLogger.logError(url: uri.toString(), error: 'Network error: $e');
       }
-      return const BaseResponse(isSuccess: false, message: 'Không thể kết nối đến máy chủ EnviVN. Vui lòng kiểm tra Internet!');
+      return const BaseResponse(
+        isSuccess: false,
+        message:
+            'Không thể kết nối đến máy chủ EnviVN. Vui lòng kiểm tra Internet!',
+      );
     } on TimeoutException catch (e) {
       if (kDebugMode) {
         NetworkLogger.logError(url: uri.toString(), error: 'Timeout: $e');
       }
-      return const BaseResponse(isSuccess: false, message: 'Kết nối mạng quá hạn (Timeout). Vui lòng thử lại!');
+      return const BaseResponse(
+        isSuccess: false,
+        message: 'Kết nối mạng quá hạn (Timeout). Vui lòng thử lại!',
+      );
     } catch (e) {
       if (kDebugMode) {
         NetworkLogger.logError(url: uri.toString(), error: '$e');
       }
-      return const BaseResponse(isSuccess: false, message: 'Đã xảy ra sự cố khi tải dữ liệu. Vui lòng thử lại!');
+      return const BaseResponse(
+        isSuccess: false,
+        message: 'Đã xảy ra sự cố khi tải dữ liệu. Vui lòng thử lại!',
+      );
     }
   }
 }

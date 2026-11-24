@@ -129,9 +129,10 @@ class AppStatusTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveBgColor = backgroundColor ?? color.withOpacity(bgOpacity);
+    final effectiveBgColor =
+        backgroundColor ?? color.withValues(alpha: bgOpacity);
     final effectiveBorderColor =
-        borderColor ?? color.withOpacity(borderOpacity);
+        borderColor ?? color.withValues(alpha: borderOpacity);
     final effectiveTextColor = textColor ?? color;
     final effectiveBorderRadius =
         borderRadius ?? BorderRadius.circular(size.borderRadius);

@@ -1,10 +1,13 @@
+import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+
 import 'package:envivn/src/common/constants/colors.dart';
 import 'package:envivn/src/core/presentation/widgets/app_icon.dart';
 import 'package:envivn/src/core/presentation/widgets/app_text.dart';
 import 'package:envivn/src/shared/widgets/app_button.dart';
 import 'package:envivn/src/shared/widgets/glass.dart';
-import 'package:flutter/material.dart';
-import 'package:gap/gap.dart';
+
+import 'radar_illustration_widget.dart';
 
 class FutureWorkHighlight {
   final IconData icon;
@@ -22,19 +25,12 @@ class FutureWorkHighlight {
 
 class FutureWorkWidget extends StatelessWidget {
   final String title;
-
   final String subtitle;
-
   final String? badgeText;
-
   final IconData centerIcon;
-
   final List<FutureWorkHighlight>? highlights;
-
   final VoidCallback? onBack;
-
   final String backButtonText;
-
   final double bottomPadding;
 
   const FutureWorkWidget({
@@ -106,7 +102,7 @@ class FutureWorkWidget extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         const Gap(128),
-                        _FutureWorkRadarIllustration(centerIcon: centerIcon),
+                        RadarIllustrationWidget(centerIcon: centerIcon),
                         const Gap(32),
                         if (badgeText != null && badgeText!.isNotEmpty) ...[
                           _buildStatusBadge(),
@@ -154,9 +150,12 @@ class FutureWorkWidget extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
-        color: UIColors.primary.withOpacity(0.12),
+        color: UIColors.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: UIColors.primary.withOpacity(0.32), width: 1),
+        border: Border.all(
+          color: UIColors.primary.withValues(alpha: 0.32),
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -169,7 +168,7 @@ class FutureWorkWidget extends StatelessWidget {
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: UIColors.primary.withOpacity(0.8),
+                  color: UIColors.primary.withValues(alpha: 0.8),
                   blurRadius: 6,
                   spreadRadius: 1,
                 ),
@@ -195,10 +194,11 @@ class FutureWorkWidget extends StatelessWidget {
       child: Column(
         children: List.generate(highlights!.length, (index) {
           final item = highlights![index];
-          final isLast = index == highlights!.length - 1;
-
+          final iconColor = item.iconColor ?? UIColors.secondary;
           return Padding(
-            padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+            padding: EdgeInsets.only(
+              bottom: index == highlights!.length - 1 ? 0 : 12,
+            ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -206,23 +206,15 @@ class FutureWorkWidget extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: (item.iconColor ?? UIColors.secondary).withOpacity(
-                      0.15,
-                    ),
+                    color: iconColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
-                      color: (item.iconColor ?? UIColors.secondary).withOpacity(
-                        0.3,
-                      ),
+                      color: iconColor.withValues(alpha: 0.3),
                       width: 0.8,
                     ),
                   ),
                   child: Center(
-                    child: AppIcon(
-                      item.icon,
-                      size: 18,
-                      color: item.iconColor ?? UIColors.secondary,
-                    ),
+                    child: AppIcon(item.icon, size: 18, color: iconColor),
                   ),
                 ),
                 const Gap(12),
@@ -249,132 +241,6 @@ class FutureWorkWidget extends StatelessWidget {
             ),
           );
         }),
-      ),
-    );
-  }
-}
-
-class _FutureWorkRadarIllustration extends StatelessWidget {
-  final IconData centerIcon;
-
-  const _FutureWorkRadarIllustration({required this.centerIcon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SizedBox(
-        width: 240,
-        height: 240,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Container(
-              width: 220,
-              height: 220,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: UIColors.primary.withOpacity(0.18),
-                  width: 2,
-                ),
-              ),
-            ),
-
-            Container(
-              width: 160,
-              height: 160,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: UIColors.primary.withOpacity(0.32),
-                  width: 2,
-                ),
-              ),
-            ),
-
-            Container(
-              width: 104,
-              height: 104,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: UIColors.primary.withOpacity(0.48),
-                  width: 2,
-                ),
-              ),
-            ),
-
-            Positioned(
-              top: 36,
-              right: 48,
-              child: Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: UIColors.secondary,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: UIColors.secondary.withOpacity(0.8),
-                      blurRadius: 8,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 46,
-              left: 54,
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: UIColors.warning,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: UIColors.warning.withOpacity(0.8),
-                      blurRadius: 6,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            Positioned(
-              bottom: 68,
-              child: Container(
-                width: 80,
-                height: 14,
-                decoration: BoxDecoration(
-                  color: UIColors.black.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: UIColors.primary,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: UIColors.primary.withOpacity(0.6),
-                    blurRadius: 26,
-                    spreadRadius: 3,
-                  ),
-                ],
-              ),
-              child: Center(
-                child: AppIcon(centerIcon, size: 30, color: UIColors.bg),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

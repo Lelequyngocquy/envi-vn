@@ -50,6 +50,13 @@ app.*.map.json
 .env*.local
 !.env_example
 !.env.example
+dart_define.json
+dart_define.*.json
+!dart_define.example.json
+**/key.properties
+!**/key.properties.example
+*.jks
+*.keystore
 
 # Rust / Backend
 **/target/

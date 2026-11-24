@@ -36,19 +36,29 @@ class ThermalHotspotModel extends ThermalHotspotEntity {
   static ThermalHotspotModel? tryFromJson(Map<String, dynamic> json) {
     final lat = (json['latitude'] as num?)?.toDouble();
     final lon = (json['longitude'] as num?)?.toDouble();
-    if (lat == null || lon == null || !lat.isFinite || !lon.isFinite) return null;
+    if (lat == null || lon == null || !lat.isFinite || !lon.isFinite) {
+      return null;
+    }
     if (lat < -90.0 || lat > 90.0 || lon < -180.0 || lon > 180.0) return null;
     return ThermalHotspotModel(
       id: json['id']?.toString() ?? '',
-      locationName: (json['location_name'] ?? json['locationName'])?.toString() ?? '',
+      locationName:
+          (json['location_name'] ?? json['locationName'])?.toString() ?? '',
       province: json['province']?.toString() ?? '',
       latitude: lat,
       longitude: lon,
-      brightnessKelvin: ((json['brightness_kelvin'] ?? json['brightnessKelvin']) as num?)?.toDouble() ?? 300.0,
-      fireType: (json['fire_type'] ?? json['fireType'])?.toString() ?? 'Điểm nhiệt vệ tinh',
+      brightnessKelvin:
+          ((json['brightness_kelvin'] ?? json['brightnessKelvin']) as num?)
+              ?.toDouble() ??
+          300.0,
+      fireType:
+          (json['fire_type'] ?? json['fireType'])?.toString() ??
+          'Điểm nhiệt vệ tinh',
       confidence: (json['confidence'] as num?)?.toDouble() ?? 80.0,
-      isActiveFire: (json['is_active_fire'] ?? json['isActiveFire']) as bool? ?? true,
-      proneSeason: (json['prone_season'] ?? json['proneSeason'])?.toString() ?? '',
+      isActiveFire:
+          (json['is_active_fire'] ?? json['isActiveFire']) as bool? ?? true,
+      proneSeason:
+          (json['prone_season'] ?? json['proneSeason'])?.toString() ?? '',
       detectedTime: (json['detected_time'] ?? json['detectedTime'])?.toString(),
       description: json['description']?.toString() ?? '',
     );
@@ -58,7 +68,8 @@ class ThermalHotspotModel extends ThermalHotspotEntity {
     return tryFromJson(json) ??
         ThermalHotspotModel(
           id: json['id']?.toString() ?? '',
-          locationName: (json['location_name'] ?? json['locationName'])?.toString() ?? '',
+          locationName:
+              (json['location_name'] ?? json['locationName'])?.toString() ?? '',
           province: json['province']?.toString() ?? '',
           latitude: 0.0,
           longitude: 0.0,

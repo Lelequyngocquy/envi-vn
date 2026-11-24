@@ -6,11 +6,11 @@ import 'package:envivn/src/core/domain/entities/details_entity.dart';
 
 enum ActivitySafetyLevel { safe, caution, avoid }
 
-/// Thông tin dự báo chi tiết cho một khung giờ hoạt động ngoài trời.
+/// Detailed forecast recommendation for a single outdoor activity window.
 class ActivitySlotInfo {
-  final String timeRange; // e.g. '05:30 - 07:30'
-  final String activity; // e.g. 'Chạy bộ • Sáng nay'
-  final String status; // e.g. 'Rất lý tưởng', 'Không khí xấu (AQI 160)'
+  final String timeRange;
+  final String activity;
+  final String status;
   final bool isOk;
 
   const ActivitySlotInfo({
@@ -60,9 +60,7 @@ class _SlotCandidate {
 class ActivityAdviceHelper {
   ActivityAdviceHelper._();
 
-  /// Đánh giá an toàn hoạt động thể thao ngoài trời theo Phương án B:
-  /// - Thẻ chính: Đánh giá cho THỜI ĐIỂM HIỆN TẠI (AQI, UV, Xác suất mưa hiện tại)
-  /// - Khung giờ gợi ý: Trích xuất chính xác theo dự báo giờ (hourly) của thời điểm tới
+  /// Evaluates current outdoor sport safety and recommends the next two time windows.
   static ActivityAdviceData evaluate({
     required int aqi,
     required double uv,
@@ -73,100 +71,78 @@ class ActivityAdviceHelper {
     bool isRaining = false,
     double precipitation = 0.0,
   }) {
-    // 1. Phân loại theo Multi-factor Matrix thời điểm hiện tại
-    final bool actuallyRaining = isRaining || precipitation > 0.1;
-    final bool isSafe =
-        !actuallyRaining && aqi <= 100 && uv <= 7 && rainProb <= 40;
-    final bool isAvoid =
-        actuallyRaining || aqi > 150 || uv > 9 || rainProb > 70;
-
-    final ActivitySafetyLevel level = isSafe
+    final actuallyRaining = isRaining || precipitation > 0.1;
+    final isSafe = !actuallyRaining && aqi <= 100 && uv <= 7 && rainProb <= 40;
+    final isAvoid = actuallyRaining || aqi > 150 || uv > 9 || rainProb > 70;
+    final level = isSafe
         ? ActivitySafetyLevel.safe
         : (isAvoid ? ActivitySafetyLevel.avoid : ActivitySafetyLevel.caution);
-
-    final String statusLabel;
-    final Color statusColor;
-
-    switch (level) {
-      case ActivitySafetyLevel.safe:
-        statusLabel = 'An toàn';
-        statusColor = UIColors.aqiGood;
-        break;
-      case ActivitySafetyLevel.caution:
-        statusLabel = 'Cần chú ý';
-        statusColor = UIColors.aqiModerate;
-        break;
-      case ActivitySafetyLevel.avoid:
-        statusLabel = 'Không nên';
-        statusColor = UIColors.aqiUnhealthy;
-        break;
-    }
-
-    // 2. Lời khuyên tổng hợp cho THỜI ĐIỂM HIỆN TẠI
-    final String adviceText;
-    if (level == ActivitySafetyLevel.avoid) {
-      if (actuallyRaining) {
-        adviceText =
-            'Trời đang có mưa (${precipitation > 0 ? '${precipitation.toStringAsFixed(1)} mm' : 'mưa rào'}). Đường trơn trượt nguy hiểm, không nên chạy bộ ngoài trời. Hãy chuẩn bị áo mưa khi đi lại.';
-      } else if (aqi > 150) {
-        adviceText =
-            'Chất lượng không khí hiện tại ở mức Xấu (AQI $aqi). Không nên chạy bộ hoặc tập luyện gắng sức ngoài trời để bảo vệ đường hô hấp.';
-      } else if (rainProb > 70) {
-        adviceText =
-            'Khu vực hiện có khả năng mưa rất cao ($rainProb%). Đường trơn trượt nguy hiểm, nên chuyển sang chạy máy hoặc tập trong nhà.';
-      } else {
-        adviceText =
-            'Chỉ số tia cực tím hiện tại đạt ngưỡng cực đoan (UV ${uv.toStringAsFixed(1)}). Nguy cơ sốc nhiệt và tổn thương da cao, không nên tập ngoài trời.';
-      }
-    } else if (level == ActivitySafetyLevel.caution) {
-      if (aqi > 100) {
-        adviceText =
-            'Không khí lúc này ở mức Kém (AQI $aqi). Nhóm người nhạy cảm nên giảm cự ly hoặc chuyển sang đi bộ nhẹ, đeo khẩu trang PM2.5.';
-      } else if (uv > 7) {
-        adviceText =
-            'Tia UV hiện tại ở mức cao (UV ${uv.toStringAsFixed(1)}). Nên chọn cung đường râm mát, đội mũ nón và thoa kem chống nắng đầy đủ.';
-      } else {
-        adviceText =
-            'Hiện tại có khả năng xuất hiện mưa rải rác ($rainProb%). Nên chú ý mặt đường ướt và mang theo áo mưa nhẹ dự phòng.';
-      }
-    } else {
-      adviceText =
-          'Thời tiết và không khí hiện tại rất lý tưởng cho chạy bộ, đạp xe và các hoạt động thể thao ngoài trời.';
-    }
-
-    // 3. Dự báo thông minh theo khung giờ sắp tới trong 24h
-    final now = currentTime ?? DateTime.now();
+    final (statusLabel, statusColor) = switch (level) {
+      ActivitySafetyLevel.safe => ('An toàn', UIColors.aqiGood),
+      ActivitySafetyLevel.caution => ('Cần chú ý', UIColors.aqiModerate),
+      ActivitySafetyLevel.avoid => ('Không nên', UIColors.aqiUnhealthy),
+    };
+    final adviceText = _buildAdviceText(
+      level: level,
+      actuallyRaining: actuallyRaining,
+      precipitation: precipitation,
+      aqi: aqi,
+      uv: uv,
+      rainProb: rainProb,
+    );
     final slots = resolveTimeSlots(
-      currentTime: now,
+      currentTime: currentTime ?? DateTime.now(),
       hourlyWeather: hourlyWeather,
       hourlyAqi: hourlyAqi,
       fallbackAqi: aqi,
       fallbackRainProb: rainProb,
     );
-
-    final morningStatus = slots.isNotEmpty ? slots[0].status : 'Thích hợp';
-    final isMorningOk = slots.isNotEmpty ? slots[0].isOk : true;
-    final eveningStatus = slots.length > 1 ? slots[1].status : 'Thích hợp';
-    final isEveningOk = slots.length > 1 ? slots[1].isOk : true;
-
     return ActivityAdviceData(
       level: level,
       statusLabel: statusLabel,
       statusColor: statusColor,
       adviceText: adviceText,
       slots: slots,
-      morningStatus: morningStatus,
-      isMorningOk: isMorningOk,
-      eveningStatus: eveningStatus,
-      isEveningOk: isEveningOk,
+      morningStatus: slots.isNotEmpty ? slots[0].status : 'Thích hợp',
+      isMorningOk: slots.isNotEmpty ? slots[0].isOk : true,
+      eveningStatus: slots.length > 1 ? slots[1].status : 'Thích hợp',
+      isEveningOk: slots.length > 1 ? slots[1].isOk : true,
     );
   }
 
-  /// Trích xuất và đánh giá 2 khung giờ tập luyện phù hợp tiếp theo dựa trên thời gian hiện tại:
-  /// - Trước 07:30: Sáng nay & Chiều nay
-  /// - Từ 07:30 đến 18:30: Chiều nay & Sáng mai
-  /// - Từ 18:30 đến 21:00: Tối nay & Sáng mai
-  /// - Sau 21:00: Sáng mai & Chiều mai
+  static String _buildAdviceText({
+    required ActivitySafetyLevel level,
+    required bool actuallyRaining,
+    required double precipitation,
+    required int aqi,
+    required double uv,
+    required int rainProb,
+  }) {
+    if (level == ActivitySafetyLevel.avoid) {
+      if (actuallyRaining) {
+        return 'Trời đang có mưa (${precipitation > 0 ? '${precipitation.toStringAsFixed(1)} mm' : 'mưa rào'}). Đường trơn trượt nguy hiểm, không nên chạy bộ ngoài trời. Hãy chuẩn bị áo mưa khi đi lại.';
+      }
+      if (aqi > 150) {
+        return 'Chất lượng không khí hiện tại ở mức Xấu (AQI $aqi). Không nên chạy bộ hoặc tập luyện gắng sức ngoài trời để bảo vệ đường hô hấp.';
+      }
+      if (rainProb > 70) {
+        return 'Khu vực hiện có khả năng mưa rất cao ($rainProb%). Đường trơn trượt nguy hiểm, nên chuyển sang chạy máy hoặc tập trong nhà.';
+      }
+      return 'Chỉ số tia cực tím hiện tại đạt ngưỡng cực đoan (UV ${uv.toStringAsFixed(1)}). Nguy cơ sốc nhiệt và tổn thương da cao, không nên tập ngoài trời.';
+    }
+    if (level == ActivitySafetyLevel.caution) {
+      if (aqi > 100) {
+        return 'Không khí lúc này ở mức Kém (AQI $aqi). Nhóm người nhạy cảm nên giảm cự ly hoặc chuyển sang đi bộ nhẹ, đeo khẩu trang PM2.5.';
+      }
+      if (uv > 7) {
+        return 'Tia UV hiện tại ở mức cao (UV ${uv.toStringAsFixed(1)}). Nên chọn cung đường râm mát, đội mũ nón và thoa kem chống nắng đầy đủ.';
+      }
+      return 'Hiện tại có khả năng xuất hiện mưa rải rác ($rainProb%). Nên chú ý mặt đường ướt và mang theo áo mưa nhẹ dự phòng.';
+    }
+    return 'Thời tiết và không khí hiện tại rất lý tưởng cho chạy bộ, đạp xe và các hoạt động thể thao ngoài trời.';
+  }
+
+  /// Resolves the next two optimal exercise slots based on local time of day.
   static List<ActivitySlotInfo> resolveTimeSlots({
     required DateTime currentTime,
     required List<HourlyDetailsPoint> hourlyWeather,
@@ -175,121 +151,102 @@ class ActivityAdviceHelper {
     int fallbackRainProb = 0,
   }) {
     final currentMinutes = currentTime.hour * 60 + currentTime.minute;
-
     final today = DateTime(
       currentTime.year,
       currentTime.month,
       currentTime.day,
     );
     final tomorrow = today.add(const Duration(days: 1));
-
-    final candidateSlots = <_SlotCandidate>[];
-
+    final List<_SlotCandidate> candidates;
     if (currentMinutes < 7 * 60 + 30) {
-      // Trước 07:30 sáng: Gợi ý Sáng nay & Chiều nay
-      candidateSlots.add(
+      candidates = [
         _SlotCandidate(
           targetTime: today.add(const Duration(hours: 6)),
           timeRange: '05:30 - 07:30',
           activity: 'Chạy bộ • Sáng nay',
         ),
-      );
-      candidateSlots.add(
         _SlotCandidate(
           targetTime: today.add(const Duration(hours: 17)),
           timeRange: '17:00 - 18:30',
           activity: 'Tập luyện • Chiều nay',
         ),
-      );
+      ];
     } else if (currentMinutes < 18 * 60 + 30) {
-      // Từ 07:30 đến 18:30: Sáng nay đã qua -> Gợi ý Chiều nay & Sáng mai
-      candidateSlots.add(
+      candidates = [
         _SlotCandidate(
           targetTime: today.add(const Duration(hours: 17)),
           timeRange: '17:00 - 18:30',
           activity: 'Tập luyện • Chiều nay',
         ),
-      );
-      candidateSlots.add(
         _SlotCandidate(
           targetTime: tomorrow.add(const Duration(hours: 6)),
           timeRange: '05:30 - 07:30',
           activity: 'Chạy bộ • Sáng mai',
         ),
-      );
+      ];
     } else if (currentMinutes < 21 * 60) {
-      // Từ 18:30 đến 21:00: Chiều nay đã qua -> Gợi ý Tối nay & Sáng mai
-      candidateSlots.add(
+      candidates = [
         _SlotCandidate(
           targetTime: today.add(const Duration(hours: 20)),
           timeRange: '19:00 - 21:00',
           activity: 'Đi bộ • Tối nay',
         ),
-      );
-      candidateSlots.add(
         _SlotCandidate(
           targetTime: tomorrow.add(const Duration(hours: 6)),
           timeRange: '05:30 - 07:30',
           activity: 'Chạy bộ • Sáng mai',
         ),
-      );
+      ];
     } else {
-      // Sau 21:00 đêm: Gợi ý Sáng mai & Chiều mai
-      candidateSlots.add(
+      candidates = [
         _SlotCandidate(
           targetTime: tomorrow.add(const Duration(hours: 6)),
           timeRange: '05:30 - 07:30',
           activity: 'Chạy bộ • Sáng mai',
         ),
-      );
-      candidateSlots.add(
         _SlotCandidate(
           targetTime: tomorrow.add(const Duration(hours: 17)),
           timeRange: '17:00 - 18:30',
           activity: 'Tập luyện • Chiều mai',
         ),
-      );
+      ];
     }
-
-    return candidateSlots.map((candidate) {
-      final weatherPoint = _findHourlyWeather(
+    return candidates.map((candidate) {
+      final weatherPoint = _findClosestByTime(
         hourlyWeather,
         candidate.targetTime,
+        (p) => p.time,
       );
-      final aqiPoint = _findHourlyAqi(hourlyAqi, candidate.targetTime);
-
+      final aqiPoint = _findClosestByTime(
+        hourlyAqi,
+        candidate.targetTime,
+        (p) => p.time,
+      );
       final slotAqi = (aqiPoint != null && aqiPoint.aqi > 0)
           ? aqiPoint.aqi
           : fallbackAqi;
       final slotRainProb =
           weatherPoint?.precipitationProbability ?? fallbackRainProb;
       final slotTemp = weatherPoint?.temperature;
-
-      final bool isAqiBad = slotAqi > 150;
-      final bool isAqiCaution = slotAqi > 100 && slotAqi <= 150;
-      final bool isRainHeavy = slotRainProb >= 65;
-      final bool isRainCaution = slotRainProb >= 40 && slotRainProb < 65;
-      final bool isTooHot = slotTemp != null && slotTemp >= 38.0;
-
-      final bool isOk = !isAqiBad && !isRainHeavy && !isAqiCaution && !isTooHot;
-
-      final String status;
-      if (isAqiBad) {
-        status = 'Không khí xấu (AQI $slotAqi)';
-      } else if (isRainHeavy) {
-        status = 'Nguy cơ mưa $slotRainProb%';
-      } else if (isAqiCaution) {
-        status = 'Nên đeo khẩu trang';
-      } else if (isTooHot) {
-        status = 'Nắng nóng ${slotTemp.round()}°C';
-      } else if (isRainCaution) {
-        status = 'Khả năng mưa $slotRainProb%';
-      } else if (slotAqi <= 50 && slotRainProb <= 20) {
-        status = 'Rất lý tưởng';
-      } else {
-        status = 'Thích hợp';
-      }
-
+      final isAqiBad = slotAqi > 150;
+      final isAqiCaution = slotAqi > 100 && slotAqi <= 150;
+      final isRainHeavy = slotRainProb >= 65;
+      final isRainCaution = slotRainProb >= 40 && slotRainProb < 65;
+      final isTooHot = slotTemp != null && slotTemp >= 38.0;
+      final isOk = !isAqiBad && !isRainHeavy && !isAqiCaution && !isTooHot;
+      final status = isAqiBad
+          ? 'Không khí xấu (AQI $slotAqi)'
+          : isRainHeavy
+          ? 'Nguy cơ mưa $slotRainProb%'
+          : isAqiCaution
+          ? 'Nên đeo khẩu trang'
+          : isTooHot
+          ? 'Nắng nóng ${slotTemp.round()}°C'
+          : isRainCaution
+          ? 'Khả năng mưa $slotRainProb%'
+          : (slotAqi <= 50 && slotRainProb <= 20
+                ? 'Rất lý tưởng'
+                : 'Thích hợp');
       return ActivitySlotInfo(
         timeRange: candidate.timeRange,
         activity: candidate.activity,
@@ -299,51 +256,26 @@ class ActivityAdviceHelper {
     }).toList();
   }
 
-  static HourlyDetailsPoint? _findHourlyWeather(
-    List<HourlyDetailsPoint> list,
+  static T? _findClosestByTime<T>(
+    List<T> list,
     DateTime target,
+    DateTime Function(T) getTime,
   ) {
     if (list.isEmpty) return null;
-    for (final p in list) {
-      if (p.time.year == target.year &&
-          p.time.month == target.month &&
-          p.time.day == target.day &&
-          p.time.hour == target.hour) {
-        return p;
+    T closest = list.first;
+    int minDiff = getTime(closest).difference(target).inMinutes.abs();
+    for (final item in list) {
+      final t = getTime(item);
+      if (t.year == target.year &&
+          t.month == target.month &&
+          t.day == target.day &&
+          t.hour == target.hour) {
+        return item;
       }
-    }
-    HourlyDetailsPoint closest = list.first;
-    int minDiff = (closest.time.difference(target)).inMinutes.abs();
-    for (final p in list) {
-      final diff = (p.time.difference(target)).inMinutes.abs();
+      final diff = t.difference(target).inMinutes.abs();
       if (diff < minDiff) {
         minDiff = diff;
-        closest = p;
-      }
-    }
-    return closest;
-  }
-
-  static HourlyAqiPoint? _findHourlyAqi(
-    List<HourlyAqiPoint> list,
-    DateTime target,
-  ) {
-    if (list.isEmpty) return null;
-    for (final p in list) {
-      if (p.time.year == target.year &&
-          p.time.month == target.month &&
-          p.time.day == target.day &&
-          p.time.hour == target.hour) {
-        return p;
-      }
-    }
-    HourlyAqiPoint closest = list.first;
-    int minDiff = (closest.time.difference(target)).inMinutes.abs();
-    for (final p in list) {
-      final diff = (p.time.difference(target)).inMinutes.abs();
-      if (diff < minDiff) {
-        minDiff = diff;
-        closest = p;
+        closest = item;
       }
     }
     return closest;

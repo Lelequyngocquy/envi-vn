@@ -64,11 +64,11 @@ class MapLayerSelectorSheet extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(18),
                     color: isSelected
-                        ? layer.badgeColor.withOpacity(0.12)
-                        : UIColors.white.withOpacity(0.02),
+                        ? layer.badgeColor.withValues(alpha: 0.12)
+                        : UIColors.white.withValues(alpha: 0.02),
                     border: Border.all(
                       color: isSelected
-                          ? layer.badgeColor.withOpacity(0.65)
+                          ? layer.badgeColor.withValues(alpha: 0.65)
                           : UIColors.cardGlassBorder,
                       width: isSelected ? 1.4 : 0.8,
                     ),
@@ -79,16 +79,18 @@ class MapLayerSelectorSheet extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: layer.badgeColor.withOpacity(0.2),
+                          color: layer.badgeColor.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: layer.badgeColor.withOpacity(0.4),
+                            color: layer.badgeColor.withValues(alpha: 0.4),
                             width: 1.0,
                           ),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: layer.badgeColor.withOpacity(0.4),
+                                    color: layer.badgeColor.withValues(
+                                      alpha: 0.4,
+                                    ),
                                     blurRadius: 10,
                                     spreadRadius: 1,
                                   ),
@@ -130,8 +132,8 @@ class MapLayerSelectorSheet extends StatelessWidget {
                                       vertical: 2,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: UIColors.secondary.withOpacity(
-                                        0.18,
+                                      color: UIColors.secondary.withValues(
+                                        alpha: 0.18,
                                       ),
                                       borderRadius: BorderRadius.circular(6),
                                     ),
@@ -163,11 +165,11 @@ class MapLayerSelectorSheet extends StatelessWidget {
                           shape: BoxShape.circle,
                           color: isSelected
                               ? layer.badgeColor
-                              : UIColors.white.withOpacity(0.08),
+                              : UIColors.white.withValues(alpha: 0.08),
                           border: Border.all(
                             color: isSelected
                                 ? layer.badgeColor
-                                : UIColors.white.withOpacity(0.2),
+                                : UIColors.white.withValues(alpha: 0.2),
                             width: 1.2,
                           ),
                         ),

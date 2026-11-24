@@ -11,13 +11,12 @@ import '../../../../core/domain/interfaces/i_ai_chat_service.dart';
 import '../../../../core/presentation/widgets/app_bottom_sheet.dart';
 import '../../../../core/presentation/widgets/app_icon.dart';
 import '../../../../core/presentation/widgets/app_text.dart';
-import '../../domain/entities/quick_prompt_type.dart';
 import '../cubits/advisor_chat_cubit.dart';
 import '../cubits/advisor_chat_state.dart';
 import '../cubits/advisor_cubit.dart';
 import '../cubits/advisor_state.dart';
-import '../extensions/advisor_ui_extensions.dart';
 import 'advisor_result_card.dart';
+import 'advisor_sheet_parts.dart';
 import 'ai_chat_conversation_view.dart';
 import 'outdoor_activity_advice_card.dart';
 
@@ -80,7 +79,6 @@ class AdvisorModalSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedLocation = location ?? AppLocationEntity.defaultLocation;
-
     final aqi = airQuality.usAqi > 0 ? airQuality.usAqi : 50;
     final pm25 = airQuality.pm25;
     final temperature = weather.currentTemp;
@@ -92,28 +90,28 @@ class AdvisorModalSheet extends StatelessWidget {
     final rainProbability = weather.hourlyForecast.isNotEmpty
         ? weather.hourlyForecast.first.precipitationProbability
         : 0;
-
     return BlocBuilder<AdvisorChatCubit, AdvisorChatState>(
+      buildWhen: (prev, curr) => prev.isAiEnabled != curr.isAiEnabled,
       builder: (context, chatState) {
         return Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _ModeToggleBar(
+            AdvisorModeToggleBar(
               isAiEnabled: chatState.isAiEnabled,
               onToggle: (enabled) =>
                   context.read<AdvisorChatCubit>().toggleAi(enabled),
             ),
             const Gap(12),
-            if (chatState.isAiEnabled) ...[
+            if (chatState.isAiEnabled)
               Flexible(
                 child: AiChatConversationView(
                   location: resolvedLocation,
                   weather: weather,
                   airQuality: airQuality,
                 ),
-              ),
-            ] else ...[
+              )
+            else ...[
               Flexible(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
@@ -126,110 +124,30 @@ class AdvisorModalSheet extends StatelessWidget {
                         weather: weather,
                         isCompact: true,
                       ),
-                      BlocBuilder<AdvisorCubit, AdvisorState>(
-                        builder: (context, state) {
-                          if (state.status == AdvisorStatus.loading) {
-                            return const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 24),
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  color: UIColors.primary,
-                                  strokeWidth: 2.5,
-                                ),
-                              ),
-                            );
-                          }
-
-                          if (state.status == AdvisorStatus.success &&
-                              state.decision != null) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 12),
-                              child: AdvisorResultCard(
-                                decision: state.decision!,
-                                prompt: state.selectedPrompt,
-                                aqi: aqi,
-                                pm25: pm25,
-                                temperature: temperature,
-                                uvIndex: uvIndex,
-                                hasRespiratoryCondition:
-                                    hasRespiratoryCondition,
-                                isRaining: isRaining,
-                                rainProbability: rainProbability,
-                                precipitation: precipitation,
-                                weatherCode: weatherCode,
-                              ),
-                            );
-                          }
-
-                          return Padding(
-                            padding: const EdgeInsets.only(top: 12, bottom: 4),
-                            child: Row(
-                              children: const [
-                                AppIcon(
-                                  Icons.lightbulb_outline_rounded,
-                                  size: 14,
-                                  color: UIColors.primary,
-                                ),
-                                Gap(6),
-                                Expanded(
-                                  child: AppText.regular(
-                                    'Chạm vào câu hỏi gợi ý bên dưới để nhận phân tích chuyên sâu tức thì',
-                                    size: 11.5,
-                                    color: UIColors.textSecondary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                      _buildAdvisorDecisionSection(
+                        aqi: aqi,
+                        pm25: pm25,
+                        temperature: temperature,
+                        uvIndex: uvIndex,
+                        isRaining: isRaining,
+                        rainProbability: rainProbability,
+                        precipitation: precipitation,
+                        weatherCode: weatherCode,
                       ),
                     ],
                   ),
                 ),
               ),
               const Gap(12),
-              BlocBuilder<AdvisorCubit, AdvisorState>(
-                buildWhen: (prev, curr) =>
-                    prev.selectedPrompt != curr.selectedPrompt ||
-                    prev.availablePrompts != curr.availablePrompts,
-                builder: (context, state) {
-                  return SizedBox(
-                    height: 40,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: state.availablePrompts.length,
-                      separatorBuilder: (_, index) => const Gap(8),
-                      itemBuilder: (context, index) {
-                        final prompt = state.availablePrompts[index];
-                        final isSelected = state.selectedPrompt == prompt;
-
-                        return _PromptChip(
-                          prompt: prompt,
-                          isSelected: isSelected,
-                          onTap: () {
-                            if (isSelected) {
-                              context.read<AdvisorCubit>().reset();
-                            } else {
-                              context.read<AdvisorCubit>().selectPrompt(
-                                prompt,
-                                aqi: aqi,
-                                pm25: pm25,
-                                temperature: temperature,
-                                uvIndex: uvIndex,
-                                hasRespiratoryCondition: hasRespiratoryCondition,
-                                isRaining: isRaining,
-                                rainProbability: rainProbability,
-                                precipitation: precipitation,
-                                weatherCode: weatherCode,
-                              );
-                            }
-                          },
-                        );
-                      },
-                    ),
-                  );
-                },
+              _buildPromptBar(
+                aqi: aqi,
+                pm25: pm25,
+                temperature: temperature,
+                uvIndex: uvIndex,
+                isRaining: isRaining,
+                rainProbability: rainProbability,
+                precipitation: precipitation,
+                weatherCode: weatherCode,
               ),
             ],
           ],
@@ -237,135 +155,127 @@ class AdvisorModalSheet extends StatelessWidget {
       },
     );
   }
-}
 
-class _ModeToggleBar extends StatelessWidget {
-  final bool isAiEnabled;
-  final ValueChanged<bool> onToggle;
-
-  const _ModeToggleBar({required this.isAiEnabled, required this.onToggle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: UIColors.white.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isAiEnabled
-              ? UIColors.primary.withOpacity(0.4)
-              : UIColors.white.withOpacity(0.12),
-          width: 1.2,
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(7),
-            decoration: BoxDecoration(
-              color: (isAiEnabled ? UIColors.primary : UIColors.textSecondary)
-                  .withOpacity(0.16),
-              shape: BoxShape.circle,
+  Widget _buildAdvisorDecisionSection({
+    required int aqi,
+    required double pm25,
+    required double temperature,
+    required double uvIndex,
+    required bool isRaining,
+    required int rainProbability,
+    required double precipitation,
+    required int weatherCode,
+  }) {
+    return BlocBuilder<AdvisorCubit, AdvisorState>(
+      buildWhen: (prev, curr) =>
+          prev.status != curr.status ||
+          prev.decision != curr.decision ||
+          prev.selectedPrompt != curr.selectedPrompt,
+      builder: (context, state) {
+        if (state.status == AdvisorStatus.loading) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Center(
+              child: CircularProgressIndicator(
+                color: UIColors.primary,
+                strokeWidth: 2.5,
+              ),
             ),
-            child: Icon(
-              Icons.auto_awesome,
-              size: 16,
-              color: isAiEnabled ? UIColors.primary : UIColors.textSecondary,
+          );
+        }
+        if (state.status == AdvisorStatus.success && state.decision != null) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: AdvisorResultCard(
+              decision: state.decision!,
+              prompt: state.selectedPrompt,
+              aqi: aqi,
+              pm25: pm25,
+              temperature: temperature,
+              uvIndex: uvIndex,
+              hasRespiratoryCondition: hasRespiratoryCondition,
+              isRaining: isRaining,
+              rainProbability: rainProbability,
+              precipitation: precipitation,
+              weatherCode: weatherCode,
             ),
-          ),
-          const Gap(10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                AppText.bold(
-                  'Trợ lý AI EnviVN',
-                  size: 13,
-                  color: isAiEnabled
-                      ? UIColors.textPrimary
-                      : UIColors.textSecondary,
-                ),
-                const Gap(1),
-                AppText.regular(
-                  isAiEnabled
-                      ? 'Local AI Node • Phản hồi thông minh'
-                      : 'Quy tắc cố định WHO/EPA (0ms)',
-                  size: 10.5,
+          );
+        }
+        return const Padding(
+          padding: EdgeInsets.only(top: 12, bottom: 4),
+          child: Row(
+            children: [
+              AppIcon(
+                Icons.lightbulb_outline_rounded,
+                size: 14,
+                color: UIColors.primary,
+              ),
+              Gap(6),
+              Expanded(
+                child: AppText.regular(
+                  'Chạm vào câu hỏi gợi ý bên dưới để nhận phân tích chuyên sâu tức thì',
+                  size: 11.5,
                   color: UIColors.textSecondary,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Switch.adaptive(
-            value: isAiEnabled,
-            onChanged: onToggle,
-            activeColor: UIColors.primary,
-            activeTrackColor: UIColors.primary.withOpacity(0.35),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
-}
 
-class _PromptChip extends StatelessWidget {
-  final QuickPromptType prompt;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _PromptChip({
-    required this.prompt,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? UIColors.primary
-              : UIColors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected
-                ? UIColors.primary
-                : UIColors.white.withOpacity(0.18),
-            width: 1.2,
+  Widget _buildPromptBar({
+    required int aqi,
+    required double pm25,
+    required double temperature,
+    required double uvIndex,
+    required bool isRaining,
+    required int rainProbability,
+    required double precipitation,
+    required int weatherCode,
+  }) {
+    return BlocBuilder<AdvisorCubit, AdvisorState>(
+      buildWhen: (prev, curr) =>
+          prev.selectedPrompt != curr.selectedPrompt ||
+          prev.availablePrompts != curr.availablePrompts,
+      builder: (context, state) {
+        return SizedBox(
+          height: 40,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: state.availablePrompts.length,
+            separatorBuilder: (_, _) => const Gap(8),
+            itemBuilder: (context, index) {
+              final prompt = state.availablePrompts[index];
+              final isSelected = state.selectedPrompt == prompt;
+              return AdvisorPromptChip(
+                prompt: prompt,
+                isSelected: isSelected,
+                onTap: () {
+                  if (isSelected) {
+                    context.read<AdvisorCubit>().reset();
+                  } else {
+                    context.read<AdvisorCubit>().selectPrompt(
+                      prompt,
+                      aqi: aqi,
+                      pm25: pm25,
+                      temperature: temperature,
+                      uvIndex: uvIndex,
+                      hasRespiratoryCondition: hasRespiratoryCondition,
+                      isRaining: isRaining,
+                      rainProbability: rainProbability,
+                      precipitation: precipitation,
+                      weatherCode: weatherCode,
+                    );
+                  }
+                },
+              );
+            },
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: UIColors.primary.withOpacity(0.35),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(
-              prompt.icon,
-              size: 16,
-              color: isSelected ? UIColors.bg : UIColors.textPrimary,
-            ),
-            const Gap(8),
-            AppText.bold(
-              prompt.label,
-              size: 12.5,
-              color: isSelected ? UIColors.bg : UIColors.textPrimary,
-            ),
-          ],
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -41,7 +41,7 @@ class MapSideControls extends StatelessWidget {
           iconColor: hasPickedLocation
               ? UIColors.pinPurple
               : isShowedAllVN
-              ? UIColors.textSecondary.withOpacity(0.4)
+              ? UIColors.textSecondary.withValues(alpha: 0.4)
               : UIColors.primary,
           onTap: hasPickedLocation ? onCancelPicker : onWholeCountry,
           tooltip: hasPickedLocation
@@ -64,7 +64,7 @@ class MapSideControls extends StatelessWidget {
           onTap: onToggleLayer,
           tooltip: 'Lớp bản đồ: ${activeLayer.label}',
           showDot: true,
-          dotColor: activeLayer.badgeColor.withOpacity(0.9),
+          dotColor: activeLayer.badgeColor.withValues(alpha: 0.9),
         ),
       ],
     );

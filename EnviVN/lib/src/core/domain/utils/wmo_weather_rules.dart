@@ -4,7 +4,9 @@ class WmoWeatherRules {
 
   static bool isRainCode(int? code) {
     if (code == null) return false;
-    return (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99);
+    return (code >= 51 && code <= 67) ||
+        (code >= 80 && code <= 82) ||
+        (code >= 95 && code <= 99);
   }
 
   static bool isThunderCode(int? code) {

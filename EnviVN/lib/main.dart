@@ -61,7 +61,12 @@ class _StartupErrorApp extends StatelessWidget {
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
-            child: AppText.semiBold('Không thể khởi tạo ứng dụng EnviVN. Vui lòng khởi động lại.', textAlign: TextAlign.center, color: UIColors.textPrimary, size: 15),
+            child: AppText.semiBold(
+              'Không thể khởi tạo ứng dụng EnviVN. Vui lòng khởi động lại.',
+              textAlign: TextAlign.center,
+              color: UIColors.textPrimary,
+              size: 15,
+            ),
           ),
         ),
       ),
@@ -76,15 +81,21 @@ class EnviVNApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<IAiChatService>.value(value: di.sl<IAiChatService>()),
+        RepositoryProvider<IAiChatService>.value(
+          value: di.sl<IAiChatService>(),
+        ),
         RepositoryProvider<MapTileConfig>.value(value: di.sl<MapTileConfig>()),
       ],
       child: MultiBlocProvider(
         providers: [
-          BlocProvider<AppLocationCubit>.value(value: di.sl<AppLocationCubit>()),
+          BlocProvider<AppLocationCubit>.value(
+            value: di.sl<AppLocationCubit>(),
+          ),
           BlocProvider<DetailsCubit>.value(value: di.sl<DetailsCubit>()),
           BlocProvider<AirQualityCubit>.value(value: di.sl<AirQualityCubit>()),
-          BlocProvider<HomeDashboardCubit>.value(value: di.sl<HomeDashboardCubit>()),
+          BlocProvider<HomeDashboardCubit>.value(
+            value: di.sl<HomeDashboardCubit>(),
+          ),
           BlocProvider<MapCubit>(create: (_) => di.sl<MapCubit>()),
         ],
         child: MaterialApp(
@@ -96,14 +107,27 @@ class EnviVNApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
-          supportedLocales: const [Locale('vi', 'VN'), Locale('vi'), Locale('en', 'US')],
+          supportedLocales: const [
+            Locale('vi', 'VN'),
+            Locale('vi'),
+            Locale('en', 'US'),
+          ],
           locale: const Locale('vi', 'VN'),
           theme: ThemeData(
             useMaterial3: true,
             brightness: Brightness.dark,
-            colorScheme: const ColorScheme.dark(primary: UIColors.primary, secondary: UIColors.secondary, surface: UIColors.cardBg),
+            colorScheme: const ColorScheme.dark(
+              primary: UIColors.primary,
+              secondary: UIColors.secondary,
+              surface: UIColors.cardBg,
+            ),
             scaffoldBackgroundColor: UIColors.bg,
-            appBarTheme: const AppBarTheme(elevation: 0, centerTitle: false, backgroundColor: UIColors.bg, foregroundColor: UIColors.textPrimary),
+            appBarTheme: const AppBarTheme(
+              elevation: 0,
+              centerTitle: false,
+              backgroundColor: UIColors.bg,
+              foregroundColor: UIColors.textPrimary,
+            ),
           ),
           initialRoute: RouterPath.splash,
           onGenerateRoute: (settings) {
@@ -111,20 +135,37 @@ class EnviVNApp extends StatelessWidget {
               case RouterPath.splash:
                 return FadeRoute(page: const SplashPage(), settings: settings);
               case RouterPath.permission:
-                return FadeRoute(page: const LocationPermissionPage(), settings: settings);
+                return FadeRoute(
+                  page: const LocationPermissionPage(),
+                  settings: settings,
+                );
               case RouterPath.home:
                 return FadeRoute(page: const HomePage(), settings: settings);
               case RouterPath.map:
-                return FadeRoute(page: const HomePage(initialTab: 1), settings: settings);
+                return FadeRoute(
+                  page: const HomePage(initialTab: 1),
+                  settings: settings,
+                );
               case RouterPath.twentyFourHours:
-                return FadeRoute(page: const TwentyFourHourDetailPage(), settings: settings);
+                return FadeRoute(
+                  page: const TwentyFourHourDetailPage(),
+                  settings: settings,
+                );
               case RouterPath.storyShare:
-                return FadeRoute(page: const StoryPreviewPage(), settings: settings);
+                return FadeRoute(
+                  page: const StoryPreviewPage(),
+                  settings: settings,
+                );
               default:
                 return MaterialPageRoute(
                   settings: settings,
                   builder: (_) => const Scaffold(
-                    appBar: PreferredSize(preferredSize: Size.fromHeight(kToolbarHeight), child: SafeArea(child: Center(child: AppText.bold('Lỗi', size: 18)))),
+                    appBar: PreferredSize(
+                      preferredSize: Size.fromHeight(kToolbarHeight),
+                      child: SafeArea(
+                        child: Center(child: AppText.bold('Lỗi', size: 18)),
+                      ),
+                    ),
                     body: Center(child: AppText.regular('Trang không tồn tại')),
                   ),
                 );

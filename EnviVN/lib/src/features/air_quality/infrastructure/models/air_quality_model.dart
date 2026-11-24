@@ -68,12 +68,18 @@ class AirQualityModel extends AirQualityEntity {
     required bool isOfflineCache,
   }) {
     final current = Map<String, dynamic>.from(json['current'] as Map);
-    final hourly = json['hourly'] is Map ? Map<String, dynamic>.from(json['hourly'] as Map) : <String, dynamic>{};
+    final hourly = json['hourly'] is Map
+        ? Map<String, dynamic>.from(json['hourly'] as Map)
+        : <String, dynamic>{};
     final hourlyList = <HourlyAqiPoint>[];
     if (hourly['time'] is List) {
       final times = hourly['time'] as List;
-      final aqis = hourly['us_aqi'] is List ? hourly['us_aqi'] as List : const [];
-      final pm25s = hourly['pm2_5'] is List ? hourly['pm2_5'] as List : const [];
+      final aqis = hourly['us_aqi'] is List
+          ? hourly['us_aqi'] as List
+          : const [];
+      final pm25s = hourly['pm2_5'] is List
+          ? hourly['pm2_5'] as List
+          : const [];
       final pm10s = hourly['pm10'] is List ? hourly['pm10'] as List : const [];
       final cutoff = DateTime.now().subtract(const Duration(hours: 1));
       for (int i = 0; i < times.length && hourlyList.length < 24; i++) {

@@ -9,7 +9,11 @@ abstract class ICacheStore {
     Duration ttl = const Duration(minutes: 30),
   });
 
-  Map<String, dynamic>? getCachedWeather({double? lat, double? lon, bool checkTtl = false});
+  Map<String, dynamic>? getCachedWeather({
+    double? lat,
+    double? lon,
+    bool checkTtl = false,
+  });
 
   bool isWeatherCacheValid({required double lat, required double lon});
 
@@ -20,7 +24,11 @@ abstract class ICacheStore {
     Duration ttl = const Duration(minutes: 30),
   });
 
-  Map<String, dynamic>? getCachedAirQuality({double? lat, double? lon, bool checkTtl = false});
+  Map<String, dynamic>? getCachedAirQuality({
+    double? lat,
+    double? lon,
+    bool checkTtl = false,
+  });
 
   bool isAirQualityCacheValid({required double lat, required double lon});
 

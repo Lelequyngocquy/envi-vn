@@ -21,9 +21,12 @@ class DetailSegmentedFilter extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: UIColors.white.withOpacity(0.05),
+        color: UIColors.white.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: UIColors.white.withOpacity(0.08), width: 0.8),
+        border: Border.all(
+          color: UIColors.white.withValues(alpha: 0.08),
+          width: 0.8,
+        ),
       ),
       child: Row(
         children: [
@@ -48,19 +51,19 @@ class DetailSegmentedFilter extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSelected
                 ? (tab == DetailTab.weather
-                      ? UIColors.secondary.withOpacity(0.22)
+                      ? UIColors.secondary.withValues(alpha: 0.22)
                       : (tab == DetailTab.airQuality
-                            ? UIColors.primary.withOpacity(0.22)
-                            : UIColors.white.withOpacity(0.12)))
+                            ? UIColors.primary.withValues(alpha: 0.22)
+                            : UIColors.white.withValues(alpha: 0.12)))
                 : UIColors.transparent,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isSelected
                   ? (tab == DetailTab.weather
-                        ? UIColors.secondary.withOpacity(0.5)
+                        ? UIColors.secondary.withValues(alpha: 0.5)
                         : (tab == DetailTab.airQuality
-                              ? UIColors.primary.withOpacity(0.5)
-                              : UIColors.white.withOpacity(0.25)))
+                              ? UIColors.primary.withValues(alpha: 0.5)
+                              : UIColors.white.withValues(alpha: 0.25)))
                   : UIColors.transparent,
               width: 0.8,
             ),
